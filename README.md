@@ -33,3 +33,6 @@ To work on this repo:
 1. `npm install`
 2. `cd web && npm install`
 3. `npm run dev` (starts both the API and the Vite UI)
+
+## License
+MIT © [Tuhama](mailto:tuhama.gh.qlyshi@gmail.com)

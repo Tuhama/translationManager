@@ -1,7 +1,15 @@
 {
-  "name": "translationmanager",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@tuhama/translation-manager",
+  "version": "0.1.0",
+  "description": "A modern, web-based UI for managing i18n translation files in React and other JavaScript projects.",
+  "author": "Tuhama <tuhama.gh.qlyshi@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "src/server.js",
   "bin": {
     "translation-manager": "bin/index.js"
@@ -25,10 +33,17 @@
     "type": "git",
     "url": "git+https://github.com/Tuhama/translationManager.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "translation",
+    "i18n",
+    "localization",
+    "l10n",
+    "react",
+    "ui",
+    "cli",
+    "translation-manager",
+    "internationalization"
+  ],
   "bugs": {
     "url": "https://github.com/Tuhama/translationManager/issues"
   },
