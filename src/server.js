@@ -63,6 +63,60 @@ function startServer(targetDir, port = 3000, config = {}) {
         }
     });
 
+    app.post('/api/translate', async (req, res) => {
+        try {
+            const { text, targetLang, sourceLang } = req.body;
+            const translatedText = await manager.translateSingle(text, targetLang, sourceLang);
+            res.json({ translatedText });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get('/api/bulk-translate/scan', async (req, res) => {
+        try {
+            const { sourceLang } = req.query;
+            const report = await manager.getBulkTranslateReport(sourceLang || 'en');
+            res.json(report);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/bulk-translate/execute', async (req, res) => {
+        try {
+            const { sourceLang } = req.body;
+            const preview = await manager.bulkTranslate(sourceLang || 'en');
+            res.json(preview);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/bulk-save', async (req, res) => {
+        try {
+            const { data } = req.body;
+            await manager.saveBulkTranslations(data);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get('/api/config', (req, res) => {
+        res.json(manager.config);
+    });
+
+    app.post('/api/settings', async (req, res) => {
+        try {
+            const { settings } = req.body;
+            await manager.saveConfig(settings);
+            res.json({ success: true, config: manager.config });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     // Serve static files from the build folder
     const buildPath = path.resolve(__dirname, '../web/dist');
     app.use(express.static(buildPath));

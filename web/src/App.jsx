@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import './index.css'
 import Sidebar from './components/Sidebar'
 import Editor from './components/Editor'
+import Settings from './components/Settings'
+import AutoTranslateTool from './components/AutoTranslateTool'
 import { useTranslations } from './hooks/useTranslations'
 
 /**
@@ -11,6 +13,8 @@ import { useTranslations } from './hooks/useTranslations'
 function App() {
   const { data, isLoading, actions } = useTranslations()
   const [selectedKey, setSelectedKey] = useState(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showAutoTranslate, setShowAutoTranslate] = useState(false)
 
   const handleSave = async (key, values) => {
     try {
@@ -50,6 +54,8 @@ function App() {
         onNewKey={() => setSelectedKey('')}
         onNormalize={handleNormalize}
         onDeleteMultiple={actions.deleteMultiple}
+        onShowSettings={() => setShowSettings(true)}
+        onShowAutoTranslate={() => setShowAutoTranslate(true)}
         isLoading={isLoading}
         data={data}
       />
@@ -64,6 +70,14 @@ function App() {
           allKeys={data.allKeys}
         />
       </main>
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+      {showAutoTranslate && (
+        <AutoTranslateTool 
+          languages={data.languages} 
+          onUpdate={actions.refresh} 
+          onClose={() => setShowAutoTranslate(false)} 
+        />
+      )}
     </div>
   )
 }

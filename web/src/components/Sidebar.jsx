@@ -14,7 +14,9 @@ const Sidebar = ({
   onNormalize,
   onDeleteMultiple,
   isLoading,
-  data
+  data,
+  onShowSettings,
+  onShowAutoTranslate
 }) => {
   const [search, setSearch] = useState('');
 
@@ -40,6 +42,10 @@ const Sidebar = ({
           <button className="create-btn" onClick={onNewKey}>+ New Key</button>
           <button className="normalize-btn" onClick={onNormalize} title="Sync and Sort Files">🪄 Normalize</button>
           <CleanupTool data={data} onDeleteMultiple={onDeleteMultiple} />
+        </div>
+        <div className="sidebar-tools">
+          <button className="tool-btn icon-text" onClick={onShowAutoTranslate}>🪄 Auto-Translate</button>
+          <button className="tool-btn" onClick={onShowSettings} title="Settings">⚙️ Settings</button>
         </div>
       </div>
       <div className="tree-view">
