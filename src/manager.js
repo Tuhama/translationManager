@@ -75,12 +75,95 @@ async function scanTranslations(targetDir, config = {}) {
         };
     });
 
+    // Analyze unused keys
+    const analysis = await findUnusedKeys(targetDir, localesDir, Array.from(allKeys), config);
+
     return {
         localesDir,
         languages,
         translations,
         allKeys: Array.from(allKeys).sort(),
-        results
+        results,
+        unused: analysis.unused,
+        maybeUsed: analysis.maybeUsed
+    };
+}
+
+/**
+ * Scans the source code for key usages to identify unused translations.
+ */
+async function findUnusedKeys(targetDir, localesDir, allKeys, config = {}) {
+    const extensions = config.extensions || ['.js', '.jsx', '.ts', '.tsx', '.html', '.vue'];
+    const exclude = config.exclude || ['node_modules', '.git', 'dist', 'build', localesDir];
+    
+    const files = [];
+    async function getFiles(dir) {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const res = path.resolve(dir, entry.name);
+            
+            // Check if directory should be excluded
+            if (entry.isDirectory()) {
+                if (exclude.includes(entry.name) || exclude.some(ex => res === path.resolve(targetDir, ex) || res.startsWith(path.resolve(targetDir, ex) + path.sep))) {
+                    continue;
+                }
+                await getFiles(res);
+            } else if (extensions.includes(path.extname(res))) {
+                files.push(res);
+            }
+        }
+    }
+
+    await getFiles(targetDir);
+    // console.log('Scanning files:', files.length);
+
+    // Read all file contents at once for performance
+    const contents = await Promise.all(files.map(f => fs.readFile(f, 'utf-8')));
+    const combinedContent = contents.join('\n---\n'); // Use a separator just in case
+
+    const used = new Set();
+    const maybeUsed = new Set();
+    const unused = [];
+
+    allKeys.forEach(key => {
+        // 1. Check for exact literal usage (in quotes or backticks)
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const literalRegex = new RegExp(`['"\`]${escapedKey}['"\`]`, 'g');
+        
+        if (literalRegex.test(combinedContent)) {
+            used.add(key);
+            return;
+        }
+
+        // 2. Check for dynamic usage (maybeUsed)
+        // If the key is 'auth.login.submit', we check if 'auth.' or 'auth.login.' is used dynamically
+        const parts = key.split('.');
+        let isMaybeUsed = false;
+        
+        for (let i = 1; i < parts.length; i++) {
+            const prefix = parts.slice(0, i).join('.') + '.';
+            const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Check for prefix + variable or prefix inside template literal
+            // e.g. 'prefix.' + var  OR  `prefix.${var}`
+            const dynamicRegex = new RegExp(`(['"\`]${escapedPrefix}['"\`].*?[+])|(['"\`]${escapedPrefix}.*?\$\{)`, 'g');
+            
+            if (dynamicRegex.test(combinedContent)) {
+                isMaybeUsed = true;
+                break;
+            }
+        }
+
+        if (isMaybeUsed) {
+            maybeUsed.add(key);
+        } else {
+            unused.push(key);
+        }
+    });
+
+    return {
+        unused: unused.sort(),
+        maybeUsed: Array.from(maybeUsed).sort()
     };
 }
 
@@ -184,9 +267,30 @@ async function deleteTranslation(localesDir, key) {
     }
 }
 
+/**
+ * Deletes multiple translation keys across all language files.
+ */
+async function deleteMultipleTranslations(localesDir, keys) {
+    const files = await fs.readdir(localesDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json'));
+
+    for (const file of jsonFiles) {
+        const filePath = path.join(localesDir, file);
+        const content = await fs.readJson(filePath);
+        
+        keys.forEach(key => {
+            lodash.unset(content, key);
+        });
+        
+        await fs.writeJson(filePath, content, { spaces: 2 });
+    }
+}
+
 module.exports = {
     scanTranslations,
+    findUnusedKeys,
     saveTranslation,
     deleteTranslation,
+    deleteMultipleTranslations,
     normalizeTranslations
 };

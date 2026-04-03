@@ -118,6 +118,27 @@ body {
   color: white;
 }
 
+.clean-btn {
+  flex: 1;
+  padding: 11px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clean-btn:hover {
+  background: #f59e0b;
+  color: white;
+}
+
 .create-btn:hover {
   background: var(--accent-color);
   color: white;
@@ -144,6 +165,18 @@ body {
   transition: var(--transition);
   font-size: 0.9rem;
   color: var(--text-muted);
+}
+
+.key-list li.unused {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.key-list li.unused span::after {
+  content: " (unused)";
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-left: 4px;
 }
 
 .key-list li span {
@@ -296,4 +329,84 @@ body {
 .empty-state p {
   color: var(--text-muted);
   margin-bottom: 32px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #1f2937;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cleanup-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.cleanup-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cleanup-item input {
+  accent-color: var(--accent-color);
+}
+
+.maybe-used-warning {
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }

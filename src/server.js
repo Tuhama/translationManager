@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const history = require('express-history-api-fallback');
-const { scanTranslations, saveTranslation, deleteTranslation, normalizeTranslations } = require('./manager');
+const { scanTranslations, saveTranslation, deleteTranslation, deleteMultipleTranslations, normalizeTranslations } = require('./manager');
 
 function startServer(targetDir, port = 3000, config = {}) {
     const app = express();
@@ -35,6 +35,17 @@ function startServer(targetDir, port = 3000, config = {}) {
             const { key } = req.body;
             const data = await scanTranslations(targetDir, config);
             await deleteTranslation(data.localesDir, key);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/delete-keys', async (req, res) => {
+        try {
+            const { keys } = req.body;
+            const data = await scanTranslations(targetDir, config);
+            await deleteMultipleTranslations(data.localesDir, keys);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
