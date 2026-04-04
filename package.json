@@ -15,7 +15,6 @@
     "translation-manager": "bin/index.js"
   },
   "files": [
-    "dist",
     "bin",
     "src",
     "web/dist",
