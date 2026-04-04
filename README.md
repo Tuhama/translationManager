@@ -34,5 +34,9 @@ To work on this repo:
 2. `cd web && npm install`
 3. `npm run dev` (starts both the API and the Vite UI)
 
+## Limitations
+- **Dynamic Keys**: The scanner uses regex to find translation keys. Highly dynamic keys (e.g. `t(someVar + '.key')` or `t(dynamicValue)`) may not be detected by the "Missing Keys" or "Unused Keys" tools.
+- **Namespaces**: Currently optimized for single-namespace or default-namespace projects.
+
 ## License
 MIT © [Tuhama](mailto:tuhama.gh.qlyshi@gmail.com)

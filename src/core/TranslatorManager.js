@@ -43,9 +43,12 @@ class TranslatorManager {
             results[key] = { missing };
         });
 
-        // Scan source for unused keys
+        // Scan source for unused and missing keys
         const scanner = new Scanner(this.targetDir, localesDir, this.config);
-        const analysis = await scanner.findUnusedKeys(allKeys);
+        const [analysis, missingFromFiles] = await Promise.all([
+            scanner.findUnusedKeys(allKeys),
+            scanner.findMissingKeys(allKeys)
+        ]);
 
         return {
             localesDir,
@@ -54,7 +57,8 @@ class TranslatorManager {
             allKeys,
             results,
             unused: analysis.unused,
-            maybeUsed: analysis.maybeUsed
+            maybeUsed: analysis.maybeUsed,
+            missingFromFiles: missingFromFiles
         };
     }
 

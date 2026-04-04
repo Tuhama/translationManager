@@ -89,6 +89,40 @@ class Scanner {
             maybeUsed: Array.from(maybeUsed).sort()
         };
     }
+
+    /**
+     * Finds keys that are used in source code but missing from translation files.
+     */
+    async findMissingKeys(existingKeys) {
+        const files = await this.getFiles();
+        const contents = await Promise.all(files.map(f => fs.readFile(f, 'utf-8')));
+        const combinedContent = contents.join('\n---\n');
+
+        const missingKeys = new Set();
+        const existingKeysSet = new Set(existingKeys);
+
+        // Regex patterns to find potential keys: 
+        // 1. t('key')
+        // 2. i18n.t('key')
+        // 3. i18nKey="key"
+        // 4. <Trans i18nKey="key">
+        const patterns = [
+            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([^'"\`]+)['"\`]/g
+        ];
+
+        patterns.forEach(regex => {
+            let match;
+            while ((match = regex.exec(combinedContent)) !== null) {
+                const key = match[1];
+                // basic validation to avoid random strings
+                if (key && key.includes('.') && !existingKeysSet.has(key)) {
+                    missingKeys.add(key);
+                }
+            }
+        });
+
+        return Array.from(missingKeys).sort();
+    }
 }
 
 module.exports = Scanner;

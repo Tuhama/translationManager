@@ -630,3 +630,52 @@ body {
 .approve-btn:hover {
   background: #059669;
 }
+
+/* Missing Keys Tool */
+.tool-btn.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.tool-btn.warning:hover {
+  background: #f59e0b;
+  color: white;
+}
+
+.missing-keys-list {
+  list-style: none;
+  margin-top: 16px;
+}
+
+.missing-key-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.key-path {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: #a78bfa;
+}
+
+.warning-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+}
+
+.sm {
+  padding: 8px 14px;
+  font-size: 0.8rem;
+}

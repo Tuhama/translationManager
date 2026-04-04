@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import KeyList from './KeyList';
 import CleanupTool from './CleanupTool';
+import MissingKeysTool from './MissingKeysTool';
 
 /**
  * Handles the sidebar layout, search, and navigation.
@@ -45,6 +46,7 @@ const Sidebar = ({
         </div>
         <div className="sidebar-tools">
           <button className="tool-btn icon-text" onClick={onShowAutoTranslate}>🪄 Auto-Translate</button>
+          <MissingKeysTool data={data} onSelectKey={onSelectKey} />
           <button className="tool-btn" onClick={onShowSettings} title="Settings">⚙️ Settings</button>
         </div>
       </div>

@@ -11,7 +11,8 @@ export const useTranslations = () => {
     allKeys: [],
     results: {},
     unused: [],
-    maybeUsed: []
+    maybeUsed: [],
+    missingFromFiles: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
