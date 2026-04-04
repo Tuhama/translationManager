@@ -54,10 +54,24 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.4));
+}
+
 .sidebar-header h1 {
   font-size: 1.5rem;
   font-weight: 800;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   background: linear-gradient(135deg, #a78bfa 0%, #3b82f6 100%);
   -webkit-background-clip: text;
   background-clip: text;

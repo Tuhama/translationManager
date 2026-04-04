@@ -30,7 +30,10 @@ const Sidebar = ({
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>Translation Manager</h1>
+        <div className="brand-row">
+          <img src="/logo.png" alt="Logo" className="logo" />
+          <h1>Translation Manager</h1>
+        </div>
         <div className="search-box">
           <input 
             type="text" 
