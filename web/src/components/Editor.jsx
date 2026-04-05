@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNestedValue } from '../utils/objectUtils';
+import { Button, FormGroup, Input, Textarea } from './ui';
 
 /**
  * Handles editing and creating translation entries.
@@ -22,7 +23,7 @@ const Editor = ({
   // Sync form data when selectedKey or translations change
   useEffect(() => {
     if (selectedKey === null) return;
-    
+
     if (selectedKey === '') {
       // New key mode
       setIsEditing(false);
@@ -89,7 +90,7 @@ const Editor = ({
     try {
         const targets = languages.filter(l => l !== sourceLang);
         const newFormData = { ...formData };
-        
+
         for (const targetLang of targets) {
             const response = await fetch('/api/translate', {
                 method: 'POST',
@@ -121,9 +122,9 @@ const Editor = ({
         <div className="hero-icon">🌍</div>
         <h2>Global Language Management</h2>
         <p>Select a key from the sidebar to edit or create a new one to get started.</p>
-        <button className="primary-btn" onClick={() => setSelectedKey('')}>
+        <Button variant="primary" onClick={() => setSelectedKey('')}>
           Create New Translation
-        </button>
+        </Button>
       </div>
     );
   }
@@ -133,56 +134,62 @@ const Editor = ({
       <div className="editor-header-row">
         <h2>{isEditing ? `Edit: ${selectedKey}` : 'Create New Key'}</h2>
         {isEditing && (
-          <button 
-            type="button" 
-            className="secondary-btn magic-btn" 
+          <Button 
+            variant="magic" 
             onClick={handleTranslateAll}
-            disabled={translatingAll}
+            loading={translatingAll}
+            loadingText="⏳ Translating..."
+            icon="🪄"
           >
-            {translatingAll ? '⏳ Translating...' : '🪄 Source-to-All'}
-          </button>
+            Source-to-All
+          </Button>
         )}
       </div>
       <form onSubmit={handleSubmit}>
         {!isEditing && (
-          <div className="form-group">
-            <label>Key (use dots for nesting)</label>
-            <input 
+          <FormGroup
+            label="Key (use dots for nesting)"
+            required
+          >
+            <Input 
               name="newKey" 
               type="text" 
               placeholder="e.g. common.buttons.save" 
               required 
               onBlur={handleBlurKey}
             />
-          </div>
+          </FormGroup>
         )}
-        {languages.map(lang => (
-          <div className={`form-group ${formData[lang] === '' ? 'missing' : ''}`} key={lang}>
-            <div className="label-row">
-              <label>
-                {lang.toUpperCase()}
-                {formData[lang] === '' && <span className="missing-label"> (Missing)</span>}
-              </label>
-              <button 
-                type="button" 
-                className="icon-btn magic-wand" 
-                onClick={() => handleTranslate(lang)}
-                disabled={translatingLang === lang || translatingAll}
-                title="Auto-translate this field"
-              >
-                {translatingLang === lang ? '⏳' : '🪄'}
-              </button>
-            </div>
-            <textarea 
-              value={formData[lang] || ''}
-              onChange={(e) => setFormData({ ...formData, [lang]: e.target.value })}
-              placeholder={`Translation in ${lang}...`}
+        {languages.map(lang => {
+          const magicButton = (
+            <Button 
+              variant="icon" 
+              onClick={() => handleTranslate(lang)}
+              disabled={translatingLang === lang || translatingAll}
+              title="Auto-translate this field"
+              className="magic-wand"
+              icon={translatingLang === lang ? '⏳' : '🪄'}
             />
-          </div>
-        ))}
+          );
+
+          return (
+            <FormGroup
+              key={lang}
+              label={lang.toUpperCase()}
+              missing={formData[lang] === ''}
+            >
+              <Textarea 
+                value={formData[lang] || ''}
+                onChange={(e) => setFormData({ ...formData, [lang]: e.target.value })}
+                placeholder={`Translation in ${lang}...`}
+                actionButton={magicButton}
+              />
+            </FormGroup>
+          );
+        })}
         <div className="form-actions">
-          <button type="submit" className="primary-btn">Save Translation</button>
-          <button type="button" className="secondary-btn" onClick={onCancel}>Cancel</button>
+          <Button type="submit" variant="primary">Save Translation</Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         </div>
       </form>
     </div>

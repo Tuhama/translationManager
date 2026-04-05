@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { Modal, Button, FormGroup, Input, Alert } from './ui';
 
 /**
  * Settings modal for managing configuration like API keys.
@@ -55,61 +55,67 @@ const Settings = ({ onClose }) => {
         }
     };
 
-    return createPortal(
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content settings-modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Configuration Settings</h2>
-                    <button className="close-btn" onClick={onClose}>&times;</button>
-                </div>
-                <div className="modal-body">
-                    <div className="form-group">
-                        <label>Locales Directory Path</label>
-                        <input 
-                            type="text" 
-                            value={localesPath} 
-                            onChange={(e) => setLocalesPath(e.target.value)} 
-                            placeholder="e.g. src/locales or public/locales"
-                            className="settings-input"
-                        />
-                        <p className="help-text">
-                            Relative path from the project root to your translation files. 
-                            If empty, we'll try to auto-detect common locations.
-                        </p>
-                    </div>
-                    <div className="form-group">
-                        <label>Google Translate API Key</label>
-                        <input 
-                            type="password" 
-                            value={apiKey} 
-                            onChange={(e) => setApiKey(e.target.value)} 
-                            placeholder="Enter your API Key..."
-                            className="settings-input"
-                        />
-                        <p className="help-text">
-                            Required for auto-translation features (Magic Wand and Bulk Translate). 
-                            You can get your key from the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>.
-                        </p>
-                    </div>
-                    {message && (
-                        <div className={`alert alert-${message.type}`}>
-                            {message.type === 'success' ? '✅' : '❌'} {message.text}
-                        </div>
-                    )}
-                </div>
-                <div className="modal-footer">
-                    <button className="secondary-btn" onClick={onClose}>Cancel</button>
-                    <button 
-                        className="primary-btn" 
-                        onClick={handleSave} 
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : 'Save Settings'}
-                    </button>
-                </div>
-            </div>
-        </div>,
-        document.body
+    const footer = (
+        <>
+            <Button variant="secondary" onClick={onClose}>
+                Cancel
+            </Button>
+            <Button 
+                variant="primary" 
+                onClick={handleSave} 
+                loading={loading}
+                loadingText="Saving..."
+            >
+                Save Settings
+            </Button>
+        </>
+    );
+
+    return (
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title="Configuration Settings"
+            className="settings-modal"
+            footer={footer}
+        >
+            <FormGroup
+                label="Locales Directory Path"
+                helpText="Relative path from the project root to your translation files. If empty, we'll try to auto-detect common locations."
+            >
+                <Input 
+                    type="text" 
+                    value={localesPath} 
+                    onChange={(e) => setLocalesPath(e.target.value)} 
+                    placeholder="e.g. src/locales or public/locales"
+                    className="settings-input"
+                />
+            </FormGroup>
+
+            <FormGroup
+                label="Google Translate API Key"
+                helpText={
+                    <>
+                        Required for auto-translation features (Magic Wand and Bulk Translate). 
+                        You can get your key from the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>.
+                    </>
+                }
+            >
+                <Input 
+                    type="password" 
+                    value={apiKey} 
+                    onChange={(e) => setApiKey(e.target.value)} 
+                    placeholder="Enter your API Key..."
+                    className="settings-input"
+                />
+            </FormGroup>
+
+            {message && (
+                <Alert type={message.type}>
+                    {message.text}
+                </Alert>
+            )}
+        </Modal>
     );
 };
 
