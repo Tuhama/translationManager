@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Modal to cleanup unused translation keys.
@@ -15,7 +16,7 @@ const CleanupModal = ({
 
   const allUnused = [...(data.unused || []), ...(data.maybeUsed || [])].sort();
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
@@ -60,7 +61,8 @@ const CleanupModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

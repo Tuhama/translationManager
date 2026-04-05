@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Bulk Translate Tool with Scan and Review functionality.
@@ -76,9 +77,9 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose }) => {
 
     const totalMissing = report ? Object.values(report).reduce((acc, curr) => acc + curr.count, 0) : 0;
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content bulk-translate-modal">
+    return createPortal(
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content bulk-translate-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>Auto-Translate Wizard 🪄</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
@@ -168,7 +169,8 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose }) => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

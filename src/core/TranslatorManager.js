@@ -196,6 +196,8 @@ class TranslatorManager {
      */
     async saveConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
+        // Sync storage config if path changed
+        this.storage.config = this.config;
         const configPath = path.resolve(this.targetDir, 'translation.config.json');
         await fs.writeJson(configPath, this.config, { spaces: 2 });
     }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Modal to display and manage missing translation keys.
@@ -6,9 +7,9 @@ import React from 'react';
 const MissingKeysModal = ({ show, onClose, missingKeys, onSelectKey }) => {
   if (!show) return null;
 
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+  return createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>⚠️ Missing Translation Keys</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
@@ -41,7 +42,8 @@ const MissingKeysModal = ({ show, onClose, missingKeys, onSelectKey }) => {
           <button className="secondary-btn" onClick={onClose}>Close</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

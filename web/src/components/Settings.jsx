@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Settings modal for managing configuration like API keys.
  */
 const Settings = ({ onClose }) => {
     const [apiKey, setApiKey] = useState('');
+    const [localesPath, setLocalesPath] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
@@ -14,6 +16,7 @@ const Settings = ({ onClose }) => {
                 const response = await fetch('/api/config');
                 const config = await response.json();
                 setApiKey(config.googleTranslateApiKey || '');
+                setLocalesPath(config.path || '');
             } catch (error) {
                 console.error('Failed to fetch config:', error);
             }
@@ -28,11 +31,19 @@ const Settings = ({ onClose }) => {
             const response = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: { googleTranslateApiKey: apiKey } })
+                body: JSON.stringify({ 
+                    settings: { 
+                        googleTranslateApiKey: apiKey,
+                        path: localesPath 
+                    } 
+                })
             });
             if (response.ok) {
                 setMessage({ type: 'success', text: 'Settings saved successfully!' });
-                setTimeout(() => onClose(), 1500);
+                setTimeout(() => {
+                    // Trigger a reload of the main translation data since the path might have changed
+                    window.location.reload(); 
+                }, 1000);
             } else {
                 const data = await response.json();
                 throw new Error(data.error || 'Failed to save settings');
@@ -44,14 +55,28 @@ const Settings = ({ onClose }) => {
         }
     };
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content settings-modal">
+    return createPortal(
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content settings-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>Configuration Settings</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
                 <div className="modal-body">
+                    <div className="form-group">
+                        <label>Locales Directory Path</label>
+                        <input 
+                            type="text" 
+                            value={localesPath} 
+                            onChange={(e) => setLocalesPath(e.target.value)} 
+                            placeholder="e.g. src/locales or public/locales"
+                            className="settings-input"
+                        />
+                        <p className="help-text">
+                            Relative path from the project root to your translation files. 
+                            If empty, we'll try to auto-detect common locations.
+                        </p>
+                    </div>
                     <div className="form-group">
                         <label>Google Translate API Key</label>
                         <input 
@@ -83,7 +108,8 @@ const Settings = ({ onClose }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
