@@ -113,7 +113,18 @@ class TranslatorManager {
      * Translates a specific text into target language.
      */
     async translateSingle(text, targetLang, sourceLang = 'en') {
-        const translator = new GoogleTranslator(this.config.googleTranslateApiKey);
+        // Support both old and new config formats for backward compatibility
+        let translatorConfig;
+        if (this.config.googleTranslateApiKey) {
+            // Legacy v2 config - provide migration guidance
+            throw new Error('Google Translate API v2 is deprecated. Please update your configuration to use v3 with projectId and keyFilename in the googleTranslate object.');
+        } else if (this.config.googleTranslate) {
+            translatorConfig = this.config.googleTranslate;
+        } else {
+            throw new Error('Google Translate configuration is missing. Please add googleTranslate.projectId and googleTranslate.keyFilename in Settings.');
+        }
+
+        const translator = new GoogleTranslator(translatorConfig);
         return await translator.translate(text, targetLang, sourceLang);
     }
 
@@ -123,7 +134,7 @@ class TranslatorManager {
     async getBulkTranslateReport(sourceLang) {
         const { languages, translations, allKeys } = await this.scan();
         const report = {};
-        
+
         languages.forEach(lang => {
             if (lang === sourceLang) return;
             const missing = allKeys.filter(key => {
@@ -148,14 +159,26 @@ class TranslatorManager {
     async bulkTranslate(sourceLang) {
         const report = await this.getBulkTranslateReport(sourceLang);
         const translations = await this.storage.readAll();
-        const translator = new GoogleTranslator(this.config.googleTranslateApiKey);
-        
+
+        // Support both old and new config formats for backward compatibility
+        let translatorConfig;
+        if (this.config.googleTranslateApiKey) {
+            // Legacy v2 config - provide migration guidance
+            throw new Error('Google Translate API v2 is deprecated. Please update your configuration to use v3 with projectId and keyFilename in the googleTranslate object.');
+        } else if (this.config.googleTranslate) {
+            translatorConfig = this.config.googleTranslate;
+        } else {
+            throw new Error('Google Translate configuration is missing. Please add googleTranslate.projectId and googleTranslate.keyFilename in Settings.');
+        }
+
+        const translator = new GoogleTranslator(translatorConfig);
+
         const preview = {};
 
         for (const lang in report) {
             const keys = report[lang].keys;
             const sourceTexts = keys.map(key => lodash.get(translations[sourceLang], key));
-            
+
             // Filter out keys that don't have source text
             const validIndices = sourceTexts.map((text, idx) => text ? idx : null).filter(idx => idx !== null);
             const textsToTranslate = validIndices.map(idx => sourceTexts[idx]);

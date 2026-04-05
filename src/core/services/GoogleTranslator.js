@@ -1,12 +1,30 @@
-const axios = require('axios');
+const { Translate } = require('@google-cloud/translate').v3;
 
 /**
- * Service for interacting with Google Cloud Translation API.
+ * Service for interacting with Google Cloud Translation API v3.
  */
 class GoogleTranslator {
-    constructor(apiKey) {
-        this.apiKey = apiKey;
-        this.baseUrl = 'https://translation.googleapis.com/language/translate/v2';
+    constructor(config) {
+        // Support both old API key format and new v3 config
+        if (typeof config === 'string') {
+            // Legacy API key - throw error to guide migration
+            throw new Error('Google Translate API v2 is deprecated. Please update your configuration to use v3 with projectId and keyFilename.');
+        }
+
+        this.projectId = config.projectId;
+        this.keyFilename = config.keyFilename;
+
+        if (!this.projectId) {
+            throw new Error('Google Cloud Project ID is required for Translate API v3. Please add it in Settings.');
+        }
+
+        // Initialize the translate client
+        const clientConfig = { projectId: this.projectId };
+        if (this.keyFilename) {
+            clientConfig.keyFilename = this.keyFilename;
+        }
+
+        this.translate = new Translate(clientConfig);
     }
 
     /**
@@ -16,8 +34,8 @@ class GoogleTranslator {
      * @param {string} sourceLang - Source language code (e.g. 'en')
      */
     async translate(text, targetLang, sourceLang = 'en') {
-        if (!this.apiKey) {
-            throw new Error('Google Translate API Key is missing. Please add it in Settings.');
+        if (!this.projectId) {
+            throw new Error('Google Cloud Project ID is missing. Please add it in Settings.');
         }
 
         if (!text || (Array.isArray(text) && text.length === 0)) {
@@ -25,24 +43,24 @@ class GoogleTranslator {
         }
 
         try {
-            const response = await axios.post(
-                `${this.baseUrl}?key=${this.apiKey}`,
-                {
-                    q: text,
-                    target: targetLang,
-                    source: sourceLang,
-                    format: 'text'
-                }
-            );
+            const location = 'global';
+            const request = {
+                parent: `projects/${this.projectId}/locations/${location}`,
+                contents: Array.isArray(text) ? text : [text],
+                mimeType: 'text/plain',
+                sourceLanguageCode: sourceLang,
+                targetLanguageCode: targetLang,
+            };
 
-            const translations = response.data.data.translations;
-            
+            const [response] = await this.translate.translateText(request);
+            const translations = response.translations.map(t => t.translatedText);
+
             if (Array.isArray(text)) {
-                return translations.map(t => t.translatedText);
+                return translations;
             }
-            return translations[0].translatedText;
+            return translations[0];
         } catch (error) {
-            const message = error.response?.data?.error?.message || error.message;
+            const message = error.message || 'Unknown translation error';
             throw new Error(`Google Translate Error: ${message}`);
         }
     }

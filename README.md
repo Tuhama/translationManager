@@ -31,7 +31,12 @@ The application automatically scans your source code for translation keys used (
 Over time, some translation keys might become obsolete. Use the "**Clean**" button to identify and batch-delete keys that are no longer referenced in your source code.
 
 ### 🪄 Auto-Translation
-Specify a Google Translate API Key in the settings to enable auto-translation. Use the "**Source-to-All**" button in the editor to quickly populate all languages from a single source translation.
+Configure Google Cloud Translation API in the settings to enable auto-translation. Use the "**Source-to-All**" button in the editor to quickly populate all languages from a single source translation. 
+
+**Recommended Setup:**
+1. Install Google Cloud CLI: `gcloud auth application-default login`
+2. Add your Google Cloud Project ID in Settings
+3. Start translating!
 
 ### 🪄 Normalization
 To keep your translation files organized, use the "**Normalize**" button to synchronize keys across all files and sort them alphabetically.
@@ -41,9 +46,16 @@ You can optionally create a `translation.config.json` in your project root:
 ```json
 {
   "path": "src/locales",
-  "port": 5000
+  "googleTranslate": {
+    "projectId": "your-google-cloud-project-id"
+  }
 }
 ```
+
+**Authentication Options:**
+- **Recommended**: Use Google Cloud CLI (`gcloud auth application-default login`)
+- **Alternative**: Specify `keyFilename` path to service account JSON file
+- **Environment**: Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
 ## Development
 To work on this repo:

@@ -1,4 +1,7 @@
 {
-  "googleTranslateApiKey": "",
+  "googleTranslate": {
+    "projectId": "",
+    "keyFilename": ""
+  },
   "path": "locales"
 }
