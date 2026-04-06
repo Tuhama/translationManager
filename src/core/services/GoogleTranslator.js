@@ -1,4 +1,4 @@
-const { Translate } = require('@google-cloud/translate').v3;
+const { TranslationServiceClient } = require('@google-cloud/translate');
 
 /**
  * Service for interacting with Google Cloud Translation API v3.
@@ -24,7 +24,7 @@ class GoogleTranslator {
             clientConfig.keyFilename = this.keyFilename;
         }
 
-        this.translate = new Translate(clientConfig);
+        this.client = new TranslationServiceClient(clientConfig);
     }
 
     /**
@@ -52,7 +52,7 @@ class GoogleTranslator {
                 targetLanguageCode: targetLang,
             };
 
-            const [response] = await this.translate.translateText(request);
+            const [response] = await this.client.translateText(request);
             const translations = response.translations.map(t => t.translatedText);
 
             if (Array.isArray(text)) {

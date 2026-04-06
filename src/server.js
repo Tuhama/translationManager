@@ -10,7 +10,7 @@ const TranslatorManager = require('./core/TranslatorManager');
 function startServer(targetDir, port = 3000, config = {}) {
     const app = express();
     const manager = new TranslatorManager(targetDir, config);
-    
+
     app.use(cors());
     app.use(express.json());
 
@@ -66,9 +66,26 @@ function startServer(targetDir, port = 3000, config = {}) {
     app.post('/api/translate', async (req, res) => {
         try {
             const { text, targetLang, sourceLang } = req.body;
+
+            // Check if Google Translate is configured
+            if (!manager.config.googleTranslate || !manager.config.googleTranslate.projectId) {
+                return res.status(400).json({ 
+                    error: 'Google Translate is not configured. Please add your Google Cloud Project ID and key file in Settings.',
+                    configurationRequired: true
+                });
+            }
+
             const translatedText = await manager.translateSingle(text, targetLang, sourceLang);
             res.json({ translatedText });
         } catch (err) {
+            // Check if it's a configuration error
+            if (err.message.includes('Google Cloud Project ID is required') || 
+                err.message.includes('Google Translate configuration is missing')) {
+                return res.status(400).json({ 
+                    error: err.message,
+                    configurationRequired: true
+                });
+            }
             res.status(500).json({ error: err.message });
         }
     });
@@ -86,9 +103,26 @@ function startServer(targetDir, port = 3000, config = {}) {
     app.post('/api/bulk-translate/execute', async (req, res) => {
         try {
             const { sourceLang } = req.body;
+
+            // Check if Google Translate is configured
+            if (!manager.config.googleTranslate || !manager.config.googleTranslate.projectId) {
+                return res.status(400).json({ 
+                    error: 'Google Translate is not configured. Please add your Google Cloud Project ID and key file in Settings.',
+                    configurationRequired: true
+                });
+            }
+
             const preview = await manager.bulkTranslate(sourceLang || 'en');
             res.json(preview);
         } catch (err) {
+            // Check if it's a configuration error
+            if (err.message.includes('Google Cloud Project ID is required') || 
+                err.message.includes('Google Translate configuration is missing')) {
+                return res.status(400).json({ 
+                    error: err.message,
+                    configurationRequired: true
+                });
+            }
             res.status(500).json({ error: err.message });
         }
     });
