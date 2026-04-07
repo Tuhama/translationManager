@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import TreeNode from './TreeNode';
+import { buildKeyTree } from '../utils/treeUtils';
 
 /**
- * Renders the list of translation keys in the sidebar.
+ * Renders the list of translation keys in the sidebar as a tree structure.
  */
 const KeyList = ({
   keys,
@@ -11,29 +13,26 @@ const KeyList = ({
   missingTranslations,
   unusedKeys
 }) => {
-  return (
-    <ul className="key-list">
-      {keys.map(key => {
-        const isMissing = missingTranslations[key]?.missing?.length > 0;
-        const isUnused = unusedKeys?.includes(key);
+  // Convert flat key list to tree structure
+  const keyTree = useMemo(() => {
+    return buildKeyTree(keys);
+  }, [keys]);
 
-        return (
-          <li
-            key={key}
-            className={`${selectedKey === key ? 'active' : ''} ${isMissing ? 'incomplete' : ''} ${isUnused ? 'unused' : ''}`}
-          >
-            <span onClick={() => onSelectKey(key)}>
-              {key}
-              {isMissing && (
-                <span className="missing-translation-dot" title={`Missing translations for: ${missingTranslations[key].missing.join(', ')}`}>
-                  🔤
-                </span>
-              )}
-            </span>
-            <button className="delete-icon" onClick={() => onDeleteKey(key)}>×</button>
-          </li>
-        );
-      })}
+  return (
+    <ul className="key-tree">
+      {Object.entries(keyTree).map(([nodeKey, node]) => (
+        <TreeNode
+          key={nodeKey}
+          nodeKey={nodeKey}
+          node={node}
+          level={0}
+          selectedKey={selectedKey}
+          onSelectKey={onSelectKey}
+          onDeleteKey={onDeleteKey}
+          missingTranslations={missingTranslations}
+          unusedKeys={unusedKeys}
+        />
+      ))}
     </ul>
   );
 };

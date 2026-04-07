@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import KeyList from './KeyList';
-import CleanupTool from './CleanupTool';
-import MissingKeysTool from './MissingKeysTool';
 
 /**
  * Handles the sidebar layout, search, and navigation.
@@ -11,14 +9,8 @@ const Sidebar = ({
   selectedKey,
   onSelectKey,
   onDeleteKey,
-  onNewKey,
-  onNormalize,
-  onDeleteMultiple,
   isLoading,
-  data,
-  onShowSettings,
-  onShowAutoTranslate,
-  onShowExportImport
+  data
 }) => {
   const [search, setSearch] = useState('');
 
@@ -30,34 +22,20 @@ const Sidebar = ({
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="brand-row">
-          <img src="/logo.png" alt="Logo" className="logo" />
-          <h1>Translation Manager</h1>
-        </div>
-        <div className="search-box">
-          <input 
-            type="text" 
-            placeholder="Search keys..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="sidebar-actions">
-          <button className="create-btn" onClick={onNewKey}>+ New Key</button>
-          <button className="normalize-btn" onClick={onNormalize} title="Sync and Sort Files">🪄 Normalize</button>
-          <CleanupTool data={data} onDeleteMultiple={onDeleteMultiple} />
-        </div>
-        <div className="sidebar-tools">
-          <button className="tool-btn icon-text" onClick={onShowAutoTranslate}>🪄 Auto-Translate</button>
-          <button className="tool-btn icon-text" onClick={onShowExportImport}>📤📥 Export/Import</button>
-          <MissingKeysTool data={data} onSelectKey={onSelectKey} />
-          <button className="tool-btn" onClick={onShowSettings} title="Settings">⚙️ Settings</button>
-        </div>
+      <div className="sidebar-search">
+        <input 
+          type="text" 
+          placeholder="Search keys..." 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
       </div>
       <div className="tree-view">
         {isLoading ? (
-          <p>Loading...</p>
+          <div className="loading-state">
+            <p>Loading...</p>
+          </div>
         ) : (
           <KeyList 
             keys={filteredKeys}

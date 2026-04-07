@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './index.css'
+import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Editor from './components/Editor'
 import Settings from './components/Settings'
@@ -62,30 +63,36 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar 
-        selectedKey={selectedKey}
-        onSelectKey={setSelectedKey}
-        onDeleteKey={handleDelete}
+      <Header 
         onNewKey={() => setSelectedKey('')}
         onNormalize={handleNormalize}
         onDeleteMultiple={actions.deleteMultiple}
         onShowSettings={() => setShowSettings(true)}
         onShowAutoTranslate={() => setShowAutoTranslate(true)}
         onShowExportImport={() => setShowExportImport(true)}
-        isLoading={isLoading}
+        onSelectKey={setSelectedKey}
         data={data}
       />
-      <main className="editor">
-        <Editor 
+      <div className="app-body">
+        <Sidebar 
           selectedKey={selectedKey}
-          setSelectedKey={setSelectedKey}
-          onSave={handleSave}
-          onCancel={() => setSelectedKey(null)}
-          languages={data.languages}
-          translations={data.translations}
-          allKeys={data.allKeys}
+          onSelectKey={setSelectedKey}
+          onDeleteKey={handleDelete}
+          isLoading={isLoading}
+          data={data}
         />
-      </main>
+        <main className="editor">
+          <Editor 
+            selectedKey={selectedKey}
+            setSelectedKey={setSelectedKey}
+            onSave={handleSave}
+            onCancel={() => setSelectedKey(null)}
+            languages={data.languages}
+            translations={data.translations}
+            allKeys={data.allKeys}
+          />
+        </main>
+      </div>
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showAutoTranslate && (
         <AutoTranslateTool 

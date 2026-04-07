@@ -32,8 +32,7 @@ const CleanupTool = ({ data, onDeleteMultiple }) => {
 
   return (
     <>
-      <button 
-        className="clean-btn" 
+      <button className="header-btn"
         onClick={handleOpen} 
         title="Remove unused keys"
       >
