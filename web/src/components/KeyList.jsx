@@ -25,8 +25,8 @@ const KeyList = ({
             <span onClick={() => onSelectKey(key)}>
               {key}
               {isMissing && (
-                <span className="warning-dot" title={`Missing: ${missingTranslations[key].missing.join(', ')}`}>
-                  ⚠️
+                <span className="missing-translation-dot" title={`Missing translations for: ${missingTranslations[key].missing.join(', ')}`}>
+                  🔤
                 </span>
               )}
             </span>

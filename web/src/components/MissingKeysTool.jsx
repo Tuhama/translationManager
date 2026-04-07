@@ -16,9 +16,9 @@ const MissingKeysTool = ({ data, onSelectKey }) => {
       <button 
         className="tool-btn icon-text warning" 
         onClick={() => setShowModal(true)}
-        title={`${missingCount} keys used in source but missing from files`}
+        title={`${missingCount} keys used in source code but missing from translation files`}
       >
-        ⚠️ {missingCount} Missing
+        ⚠️ {missingCount} Missing Keys
       </button>
 
       {showModal && (

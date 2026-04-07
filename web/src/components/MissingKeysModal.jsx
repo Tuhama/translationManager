@@ -11,12 +11,12 @@ const MissingKeysModal = ({ show, onClose, missingKeys, onSelectKey }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>⚠️ Missing Translation Keys</h2>
+          <h2>⚠️ Keys Missing from Translation Files</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <div className="modal-body">
           <p className="description">
-            The following keys were detected in your source code but are not defined in any of your translation files.
+            The following keys were detected in your source code but are not defined in any of your translation files. These keys need to be created in your translation files.
           </p>
           <div className="warning-box">
              <strong>Note:</strong> Dynamic keys (e.g. <code>t(variable)</code>) or keys constructed at runtime may not be detected by this scanner.
