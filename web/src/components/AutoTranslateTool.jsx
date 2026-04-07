@@ -4,7 +4,7 @@ import { Modal, Button, Alert } from './ui';
 /**
  * Bulk Translate Tool with Scan and Review functionality.
  */
-const AutoTranslateTool = ({ languages, onUpdate, onClose }) => {
+const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
     const [sourceLang, setSourceLang] = useState('en');
     const [report, setReport] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -55,18 +55,39 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose }) => {
     };
 
     const handleApprove = async () => {
+        // Create a custom dialog with three options
+        const choice = window.prompt(
+            'Choose how to save the translation files:\n\n' +
+            '1 - Save with pretty-printing and sorting (recommended)\n' +
+            '2 - Save without formatting (faster)\n' +
+            '0 - Cancel\n\n' +
+            'Enter your choice (0, 1, or 2):'
+        );
+
+        if (choice === null || choice === '0') return; // Cancel
+
+        const format = choice === '1'; // true for formatted, false for unformatted
+
         setLoading(true);
         try {
-            const response = await fetch('/api/bulk-save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: preview })
-            });
-            if (response.ok) {
+            if (actions && actions.saveBulk) {
+                // Use the actions prop if available
+                await actions.saveBulk(preview, format);
                 onUpdate();
                 onClose();
             } else {
-                throw new Error('Failed to save translations.');
+                // Fallback to direct API call
+                const response = await fetch('/api/bulk-save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: preview, format })
+                });
+                if (response.ok) {
+                    onUpdate();
+                    onClose();
+                } else {
+                    throw new Error('Failed to save translations.');
+                }
             }
         } catch (error) {
             setError(error.message);

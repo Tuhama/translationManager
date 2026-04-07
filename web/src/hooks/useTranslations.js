@@ -37,8 +37,12 @@ export const useTranslations = () => {
 
   const actions = {
     refresh: fetchData,
-    save: async (key, values) => {
-      await TranslationService.saveTranslation(key, values);
+    save: async (key, values, format = true) => {
+      await TranslationService.saveTranslation(key, values, format);
+      await fetchData();
+    },
+    saveBulk: async (data, format = true) => {
+      await TranslationService.saveBulkTranslations(data, format);
       await fetchData();
     },
     deleteSingle: async (key) => {

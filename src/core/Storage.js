@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
+const Utilities = require('./Utilities');
 
 /**
  * Interface-like class for managing translation file storage.
@@ -62,19 +63,24 @@ class Storage {
     /**
      * Writes a single translation file (or all of them).
      */
-    async write(lang, content) {
+    async write(lang, content, options = {}) {
         const localesDir = await this.getLocalesDir();
         const filePath = path.join(localesDir, `${lang}.json`);
-        await fs.writeJson(filePath, content, { spaces: 2 });
+
+        // Sort the content before writing if sorting is enabled (default: true)
+        const shouldSort = options.sort !== false;
+        const finalContent = shouldSort ? Utilities.sortObject(content) : content;
+
+        await fs.writeJson(filePath, finalContent, { spaces: 2 });
     }
 
     /**
      * Writes all translations.
      */
-    async writeAll(translations) {
+    async writeAll(translations, options = {}) {
         const languages = Object.keys(translations);
         for (const lang of languages) {
-            await this.write(lang, translations[lang]);
+            await this.write(lang, translations[lang], options);
         }
     }
 }

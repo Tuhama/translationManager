@@ -26,8 +26,9 @@ function startServer(targetDir, port = 3000, config = {}) {
 
     app.post('/api/translations', async (req, res) => {
         try {
-            const { key, values } = req.body;
-            await manager.saveTranslation(key, values);
+            const { key, values, format = true } = req.body;
+            const options = { sort: format };
+            await manager.saveTranslation(key, values, options);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -129,8 +130,9 @@ function startServer(targetDir, port = 3000, config = {}) {
 
     app.post('/api/bulk-save', async (req, res) => {
         try {
-            const { data } = req.body;
-            await manager.saveBulkTranslations(data);
+            const { data, format = true } = req.body;
+            const options = { sort: format };
+            await manager.saveBulkTranslations(data, options);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });

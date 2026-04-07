@@ -65,14 +65,14 @@ class TranslatorManager {
     /**
      * Saves a translation key across all language files.
      */
-    async saveTranslation(key, values) {
+    async saveTranslation(key, values, options = {}) {
         const translations = await this.storage.readAll();
         const languages = Object.keys(translations);
 
         for (const lang of languages) {
             if (values[lang] !== undefined) {
                 lodash.set(translations[lang], key, values[lang]);
-                await this.storage.write(lang, translations[lang]);
+                await this.storage.write(lang, translations[lang], options);
             }
         }
     }
@@ -200,7 +200,7 @@ class TranslatorManager {
      * Saves multiple translation keys across languages.
      * @param {Object} data - { lang: { key: value } }
      */
-    async saveBulkTranslations(data) {
+    async saveBulkTranslations(data, options = {}) {
         const translations = await this.storage.readAll();
         const languages = Object.keys(translations);
 
@@ -209,7 +209,7 @@ class TranslatorManager {
                 for (const key in data[lang]) {
                     lodash.set(translations[lang], key, data[lang][key]);
                 }
-                await this.storage.write(lang, translations[lang]);
+                await this.storage.write(lang, translations[lang], options);
             }
         }
     }

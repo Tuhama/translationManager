@@ -17,8 +17,21 @@ function App() {
   const [showAutoTranslate, setShowAutoTranslate] = useState(false)
 
   const handleSave = async (key, values) => {
+    // Create a custom dialog with three options
+    const choice = window.prompt(
+      'Choose how to save the translation files:\n\n' +
+      '1 - Save with pretty-printing and sorting (recommended)\n' +
+      '2 - Save without formatting (faster)\n' +
+      '0 - Cancel\n\n' +
+      'Enter your choice (0, 1, or 2):'
+    );
+
+    if (choice === null || choice === '0') return; // Cancel
+
+    const format = choice === '1'; // true for formatted, false for unformatted
+
     try {
-      await actions.save(key, values)
+      await actions.save(key, values, format)
       setSelectedKey(key)
     } catch (err) {
       console.error('Save failed', err)
@@ -75,7 +88,8 @@ function App() {
         <AutoTranslateTool 
           languages={data.languages} 
           onUpdate={actions.refresh} 
-          onClose={() => setShowAutoTranslate(false)} 
+          onClose={() => setShowAutoTranslate(false)}
+          actions={actions}
         />
       )}
     </div>

@@ -14,11 +14,11 @@ class TranslationService {
   /**
    * Saves a translation.
    */
-  static async saveTranslation(key, values) {
+  static async saveTranslation(key, values, format = true) {
     const res = await fetch('/api/translations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, values })
+      body: JSON.stringify({ key, values, format })
     });
     if (!res.ok) throw new Error('Save failed');
     return await res.json();
@@ -47,6 +47,19 @@ class TranslationService {
       body: JSON.stringify({ keys })
     });
     if (!res.ok) throw new Error('Batch delete failed');
+    return await res.json();
+  }
+
+  /**
+   * Saves bulk translations.
+   */
+  static async saveBulkTranslations(data, format = true) {
+    const res = await fetch('/api/bulk-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data, format })
+    });
+    if (!res.ok) throw new Error('Bulk save failed');
     return await res.json();
   }
 
