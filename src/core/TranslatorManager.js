@@ -215,6 +215,109 @@ class TranslatorManager {
     }
 
     /**
+     * Exports missing translation keys in the format: {"key": {"lang1": "", "lang2": ""}}
+     * @param {string} sourceLang - The source language to exclude from missing keys
+     * @returns {Object} - Export data with missing keys and empty values for each target language
+     */
+    async exportMissingKeys(sourceLang = 'en') {
+        const { languages, translations, allKeys } = await this.scan();
+        const exportData = {};
+
+        // Get all missing keys across all languages
+        const allMissingKeys = new Set();
+
+        languages.forEach(lang => {
+            if (lang === sourceLang) return;
+
+            allKeys.forEach(key => {
+                const val = lodash.get(translations[lang], key);
+                if (val === undefined || val === '') {
+                    allMissingKeys.add(key);
+                }
+            });
+        });
+
+        // Build export structure: {"key": {"lang1": "", "lang2": ""}}
+        Array.from(allMissingKeys).forEach(key => {
+            exportData[key] = {};
+            languages.forEach(lang => {
+                if (lang !== sourceLang) {
+                    const val = lodash.get(translations[lang], key);
+                    exportData[key][lang] = (val === undefined || val === '') ? '' : val;
+                }
+            });
+        });
+
+        return {
+            exportData,
+            metadata: {
+                sourceLang,
+                targetLanguages: languages.filter(lang => lang !== sourceLang),
+                totalKeys: allMissingKeys.size,
+                exportedAt: new Date().toISOString()
+            }
+        };
+    }
+
+    /**
+     * Imports translated keys from the export format back into translation files
+     * @param {Object} importData - Data in format {"key": {"lang1": "translation", "lang2": "translation"}}
+     * @param {Object} options - Import options (merge strategy, formatting, etc.)
+     */
+    async importTranslations(importData, options = {}) {
+        const { 
+            overwriteExisting = false, 
+            skipEmpty = true,
+            format = true 
+        } = options;
+
+        const translations = await this.storage.readAll();
+        const languages = Object.keys(translations);
+        const importStats = {
+            imported: 0,
+            skipped: 0,
+            errors: []
+        };
+
+        for (const key in importData) {
+            const keyTranslations = importData[key];
+
+            for (const lang in keyTranslations) {
+                const translation = keyTranslations[lang];
+
+                // Skip if language doesn't exist in project
+                if (!languages.includes(lang)) {
+                    importStats.errors.push(`Language '${lang}' not found in project`);
+                    continue;
+                }
+
+                // Skip empty translations if configured
+                if (skipEmpty && (!translation || translation.trim() === '')) {
+                    importStats.skipped++;
+                    continue;
+                }
+
+                // Check if key already has a value
+                const existingValue = lodash.get(translations[lang], key);
+                if (existingValue && existingValue !== '' && !overwriteExisting) {
+                    importStats.skipped++;
+                    continue;
+                }
+
+                // Import the translation
+                lodash.set(translations[lang], key, translation);
+                importStats.imported++;
+            }
+        }
+
+        // Save all updated translations
+        const saveOptions = { sort: format };
+        await this.storage.writeAll(translations, saveOptions);
+
+        return importStats;
+    }
+
+    /**
      * Saves the current configuration to the config file.
      */
     async saveConfig(newConfig) {

@@ -139,6 +139,46 @@ function startServer(targetDir, port = 3000, config = {}) {
         }
     });
 
+    app.get('/api/export-missing', async (req, res) => {
+        try {
+            const { sourceLang = 'en' } = req.query;
+            const exportResult = await manager.exportMissingKeys(sourceLang);
+
+            // Set headers for file download
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', `attachment; filename="missing-translations-${new Date().toISOString().split('T')[0]}.json"`);
+
+            res.json(exportResult.exportData);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/import-translations', async (req, res) => {
+        try {
+            const { data, options = {} } = req.body;
+
+            if (!data || typeof data !== 'object') {
+                return res.status(400).json({ error: 'Invalid import data format' });
+            }
+
+            const importStats = await manager.importTranslations(data, options);
+            res.json({ success: true, stats: importStats });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get('/api/export-missing/preview', async (req, res) => {
+        try {
+            const { sourceLang = 'en' } = req.query;
+            const exportResult = await manager.exportMissingKeys(sourceLang);
+            res.json(exportResult);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     app.get('/api/config', (req, res) => {
         res.json(manager.config);
     });

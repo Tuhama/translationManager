@@ -17,7 +17,8 @@ const Sidebar = ({
   isLoading,
   data,
   onShowSettings,
-  onShowAutoTranslate
+  onShowAutoTranslate,
+  onShowExportImport
 }) => {
   const [search, setSearch] = useState('');
 
@@ -49,6 +50,7 @@ const Sidebar = ({
         </div>
         <div className="sidebar-tools">
           <button className="tool-btn icon-text" onClick={onShowAutoTranslate}>🪄 Auto-Translate</button>
+          <button className="tool-btn icon-text" onClick={onShowExportImport}>📤📥 Export/Import</button>
           <MissingKeysTool data={data} onSelectKey={onSelectKey} />
           <button className="tool-btn" onClick={onShowSettings} title="Settings">⚙️ Settings</button>
         </div>

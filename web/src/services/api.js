@@ -71,6 +71,49 @@ class TranslationService {
     if (!res.ok) throw new Error('Normalization failed');
     return await res.json();
   }
+
+  /**
+   * Exports missing translation keys
+   */
+  static async exportMissingKeys(sourceLang = 'en') {
+    const res = await fetch(`/api/export-missing?sourceLang=${sourceLang}`);
+    if (!res.ok) throw new Error('Export failed');
+
+    // Trigger download
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `missing-translations-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    return true;
+  }
+
+  /**
+   * Gets preview of missing keys export
+   */
+  static async getExportPreview(sourceLang = 'en') {
+    const res = await fetch(`/api/export-missing/preview?sourceLang=${sourceLang}`);
+    if (!res.ok) throw new Error('Failed to get export preview');
+    return await res.json();
+  }
+
+  /**
+   * Imports translated keys
+   */
+  static async importTranslations(data, options = {}) {
+    const res = await fetch('/api/import-translations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data, options })
+    });
+    if (!res.ok) throw new Error('Import failed');
+    return await res.json();
+  }
 }
 
 export default TranslationService;

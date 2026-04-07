@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar'
 import Editor from './components/Editor'
 import Settings from './components/Settings'
 import AutoTranslateTool from './components/AutoTranslateTool'
+import ExportImportTool from './components/ExportImportTool'
 import { useTranslations } from './hooks/useTranslations'
 
 /**
@@ -15,6 +16,7 @@ function App() {
   const [selectedKey, setSelectedKey] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showAutoTranslate, setShowAutoTranslate] = useState(false)
+  const [showExportImport, setShowExportImport] = useState(false)
 
   const handleSave = async (key, values) => {
     // Create a custom dialog with three options
@@ -69,6 +71,7 @@ function App() {
         onDeleteMultiple={actions.deleteMultiple}
         onShowSettings={() => setShowSettings(true)}
         onShowAutoTranslate={() => setShowAutoTranslate(true)}
+        onShowExportImport={() => setShowExportImport(true)}
         isLoading={isLoading}
         data={data}
       />
@@ -90,6 +93,13 @@ function App() {
           onUpdate={actions.refresh} 
           onClose={() => setShowAutoTranslate(false)}
           actions={actions}
+        />
+      )}
+      {showExportImport && (
+        <ExportImportTool 
+          languages={data.languages} 
+          onUpdate={actions.refresh} 
+          onClose={() => setShowExportImport(false)}
         />
       )}
     </div>
