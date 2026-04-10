@@ -7,7 +7,6 @@ import TranslationService from '../services/api';
  */
 const ExportImportTool = ({ languages, onUpdate, onClose }) => {
     const [activeTab, setActiveTab] = useState('export');
-    const [sourceLang, setSourceLang] = useState('en');
     const [exportPreview, setExportPreview] = useState(null);
     const [importFile, setImportFile] = useState(null);
     const [importOptions, setImportOptions] = useState({
@@ -19,18 +18,18 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
     const [error, setError] = useState(null);
     const [importResult, setImportResult] = useState(null);
 
-    // Load export preview when tab or source language changes
+    // Load export preview when tab changes
     useEffect(() => {
         if (activeTab === 'export') {
             loadExportPreview();
         }
-    }, [activeTab, sourceLang]);
+    }, [activeTab]);
 
     const loadExportPreview = async () => {
         setLoading(true);
         setError(null);
         try {
-            const preview = await TranslationService.getExportPreview(sourceLang);
+            const preview = await TranslationService.getExportPreview();
             setExportPreview(preview);
         } catch (error) {
             setError(error.message);
@@ -43,7 +42,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
         setLoading(true);
         setError(null);
         try {
-            await TranslationService.exportMissingKeys(sourceLang);
+            await TranslationService.exportMissingKeys();
             // File download is handled by the service
         } catch (error) {
             setError(error.message);
@@ -74,7 +73,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
         try {
             const fileContent = await importFile.text();
             const importData = JSON.parse(fileContent);
-            
+
             const result = await TranslationService.importTranslations(importData, importOptions);
             setImportResult(result.stats);
             onUpdate(); // Refresh the main data
@@ -94,7 +93,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                 <Button 
                     variant="primary" 
                     onClick={handleExport}
-                    disabled={loading || !exportPreview || exportPreview.metadata.totalKeys === 0}
+                    disabled={loading || !exportPreview}
                     loading={loading}
                     loadingText="Exporting..."
                 >
@@ -118,7 +117,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
         <Modal
             isOpen={true}
             onClose={onClose}
-            title="Export/Import Missing Keys 📤📥"
+            title="Export/Import Translations 📤📥"
             className="export-import-modal"
             footer={footer}
         >
@@ -146,18 +145,9 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
 
                 {activeTab === 'export' ? (
                     <div className="export-tab">
-                        <FormGroup label="Source Language">
-                            <select 
-                                value={sourceLang} 
-                                onChange={(e) => setSourceLang(e.target.value)}
-                                className="source-select"
-                            >
-                                {languages.map(lang => (
-                                    <option key={lang} value={lang}>{lang.toUpperCase()}</option>
-                                ))}
-                            </select>
-                            <p className="help-text">Keys missing in other languages will be exported for translation.</p>
-                        </FormGroup>
+                        <div className="export-info">
+                            <p>Export translation keys that exist in your source code but are missing from translation files.</p>
+                        </div>
 
                         {loading ? (
                             <div className="skeleton-text">Loading export preview...</div>
@@ -165,10 +155,10 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                             <div className="export-preview">
                                 <h3>Export Preview</h3>
                                 <div className="preview-stats">
-                                    <p><strong>{exportPreview.metadata.totalKeys}</strong> missing keys found</p>
-                                    <p>Target languages: <strong>{exportPreview.metadata.targetLanguages.join(', ')}</strong></p>
+                                    <p><strong>{exportPreview.metadata.totalKeys}</strong> translation keys found</p>
+                                    <p>Languages: <strong>{exportPreview.metadata.languages.join(', ')}</strong></p>
                                 </div>
-                                
+
                                 {exportPreview.metadata.totalKeys > 0 ? (
                                     <div className="preview-sample">
                                         <h4>Sample keys to be exported:</h4>
@@ -186,8 +176,8 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                                         )}
                                     </div>
                                 ) : (
-                                    <Alert type="success">
-                                        ✅ All translations are complete! No missing keys to export.
+                                    <Alert type="info">
+                                        ℹ️ No translation keys found to export.
                                     </Alert>
                                 )}
                             </div>
@@ -195,13 +185,12 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                     </div>
                 ) : (
                     <div className="import-tab">
-                        <FormGroup label="Select Translation File">
+                        <FormGroup label="Select Translation File" helpText="Select the JSON file with translated keys to import.">
                             <Input 
                                 type="file" 
                                 accept=".json"
                                 onChange={handleFileSelect}
                             />
-                            <p className="help-text">Select the JSON file with translated keys to import.</p>
                         </FormGroup>
 
                         <div className="import-options">

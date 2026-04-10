@@ -260,6 +260,32 @@ class TranslatorManager {
     }
 
     /**
+     * Exports keys that are used in code but not in translation files.
+     * @returns {Object} - Export data with missing keys and empty values for each language
+     */
+    async exportMissingFromFiles() {
+        const { languages, missingFromFiles } = await this.scan();
+        const exportData = {};
+
+        // Build structure: {"key": {"lang1": "", "lang2": ""}}
+        missingFromFiles.forEach(key => {
+            exportData[key] = {};
+            languages.forEach(lang => {
+                exportData[key][lang] = '';
+            });
+        });
+
+        return {
+            exportData,
+            metadata: {
+                languages,
+                totalKeys: missingFromFiles.length,
+                exportedAt: new Date().toISOString()
+            }
+        };
+    }
+
+    /**
      * Imports translated keys from the export format back into translation files
      * @param {Object} importData - Data in format {"key": {"lang1": "translation", "lang2": "translation"}}
      * @param {Object} options - Import options (merge strategy, formatting, etc.)

@@ -141,12 +141,11 @@ function startServer(targetDir, port = 3000, config = {}) {
 
     app.get('/api/export-missing', async (req, res) => {
         try {
-            const { sourceLang = 'en' } = req.query;
-            const exportResult = await manager.exportMissingKeys(sourceLang);
+            const exportResult = await manager.exportMissingFromFiles();
 
             // Set headers for file download
             res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Content-Disposition', `attachment; filename="missing-translations-${new Date().toISOString().split('T')[0]}.json"`);
+            res.setHeader('Content-Disposition', `attachment; filename="missing-keys-from-code-${new Date().toISOString().split('T')[0]}.json"`);
 
             res.json(exportResult.exportData);
         } catch (err) {
@@ -171,8 +170,7 @@ function startServer(targetDir, port = 3000, config = {}) {
 
     app.get('/api/export-missing/preview', async (req, res) => {
         try {
-            const { sourceLang = 'en' } = req.query;
-            const exportResult = await manager.exportMissingKeys(sourceLang);
+            const exportResult = await manager.exportMissingFromFiles();
             res.json(exportResult);
         } catch (err) {
             res.status(500).json({ error: err.message });

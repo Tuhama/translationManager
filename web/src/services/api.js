@@ -73,10 +73,10 @@ class TranslationService {
   }
 
   /**
-   * Exports missing translation keys
+   * Exports all translation keys for all languages
    */
-  static async exportMissingKeys(sourceLang = 'en') {
-    const res = await fetch(`/api/export-missing?sourceLang=${sourceLang}`);
+  static async exportMissingKeys() {
+    const res = await fetch('/api/export-missing');
     if (!res.ok) throw new Error('Export failed');
 
     // Trigger download
@@ -84,7 +84,7 @@ class TranslationService {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `missing-translations-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `missing-keys-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -94,10 +94,10 @@ class TranslationService {
   }
 
   /**
-   * Gets preview of missing keys export
+   * Gets preview of all translations export
    */
-  static async getExportPreview(sourceLang = 'en') {
-    const res = await fetch(`/api/export-missing/preview?sourceLang=${sourceLang}`);
+  static async getExportPreview() {
+    const res = await fetch('/api/export-missing/preview');
     if (!res.ok) throw new Error('Failed to get export preview');
     return await res.json();
   }

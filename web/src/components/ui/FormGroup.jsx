@@ -28,11 +28,11 @@ const FormGroup = ({
             {required && <span className="required-indicator"> *</span>}
             {missing && <span className="missing-label"> (Missing)</span>}
           </label>
-          {children.props && children.props.actionButton && children.props.actionButton}
+          {children?.props?.actionButton && children?.props?.actionButton}
         </div>
       )}
       {React.cloneElement(children, {
-        className: `${children.props.className || ''} ${error ? 'error' : ''}`.trim()
+        className: `${children?.props?.className || ''} ${error ? 'error' : ''}`.trim()
       })}
       {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-text">{error}</p>}
