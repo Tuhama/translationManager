@@ -92,13 +92,11 @@ class Scanner {
 
     /**
      * Finds keys that are used in source code but missing from translation files.
+     * Returns an array of keys by default, or an object with context if includeContext is true.
      */
-    async findMissingKeys(existingKeys) {
+    async findMissingKeys(existingKeys, includeContext = false) {
         const files = await this.getFiles();
-        const contents = await Promise.all(files.map(f => fs.readFile(f, 'utf-8')));
-        const combinedContent = contents.join('\n---\n');
-
-        const missingKeys = new Set();
+        const missingKeysData = {};
         const existingKeysSet = new Set(existingKeys);
 
         // Regex patterns to find potential keys: 
@@ -106,22 +104,100 @@ class Scanner {
         // 2. i18n.t('key')
         // 3. i18nKey="key"
         // 4. <Trans i18nKey="key">
+        // 5. useTranslation(['namespace']) -> t('key')
         const patterns = [
             /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([^'"\`\s]+)['"\`]/g
         ];
 
-        patterns.forEach(regex => {
-            let match;
-            while ((match = regex.exec(combinedContent)) !== null) {
-                const key = match[1];
-                // basic validation to avoid random strings and ensure it's not a translation file path
-                if (key && !existingKeysSet.has(key) && !key.includes('/') && !key.includes('\\')) {
-                    missingKeys.add(key);
-                }
-            }
-        });
+        for (const file of files) {
+            const content = await fs.readFile(file, 'utf-8');
+            const lines = content.split('\n');
 
-        return Array.from(missingKeys).sort();
+            patterns.forEach(regex => {
+                let match;
+                // Reset regex state for each file
+                regex.lastIndex = 0;
+                while ((match = regex.exec(content)) !== null) {
+                    const key = match[1];
+                    // basic validation to avoid random strings and ensure it's not a translation file path
+                    if (key && !existingKeysSet.has(key) && !key.includes('/') && !key.includes('\\')) {
+                        if (includeContext) {
+                            if (!missingKeysData[key]) {
+                                missingKeysData[key] = {
+                                    key,
+                                    occurrences: []
+                                };
+                            }
+                            
+                            // Find line number
+                            const index = match.index;
+                            const lineNo = content.substring(0, index).split('\n').length;
+                            const contextRange = 2; // lines before and after
+                            const startLine = Math.max(0, lineNo - contextRange - 1);
+                            const endLine = Math.min(lines.length, lineNo + contextRange);
+                            const contextLines = lines.slice(startLine, endLine);
+                            
+                            missingKeysData[key].occurrences.push({
+                                file: path.relative(this.targetDir, file),
+                                line: lineNo,
+                                context: contextLines.join('\n').trim()
+                            });
+                        } else {
+                            missingKeysData[key] = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        if (includeContext) {
+            return missingKeysData;
+        }
+        return Object.keys(missingKeysData).sort();
+    }
+
+    /**
+     * Finds context for a list of existing keys.
+     */
+    async findContextForKeys(keys) {
+        const files = await this.getFiles();
+        const contextData = {};
+        const keysSet = new Set(keys);
+
+        for (const file of files) {
+            const content = await fs.readFile(file, 'utf-8');
+            const lines = content.split('\n');
+
+            keys.forEach(key => {
+                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`['"\`]${escapedKey}['"\`]`, 'g');
+                
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (!contextData[key]) {
+                        contextData[key] = {
+                            key,
+                            occurrences: []
+                        };
+                    }
+
+                    const index = match.index;
+                    const lineNo = content.substring(0, index).split('\n').length;
+                    const contextRange = 2;
+                    const startLine = Math.max(0, lineNo - contextRange - 1);
+                    const endLine = Math.min(lines.length, lineNo + contextRange);
+                    const contextLines = lines.slice(startLine, endLine);
+
+                    contextData[key].occurrences.push({
+                        file: path.relative(this.targetDir, file),
+                        line: lineNo,
+                        context: contextLines.join('\n').trim()
+                    });
+                }
+            });
+        }
+
+        return contextData;
     }
 }
 

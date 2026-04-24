@@ -5,6 +5,7 @@ const Storage = require('./Storage');
 const Scanner = require('./Scanner');
 const Utilities = require('./Utilities');
 const GoogleTranslator = require('./services/GoogleTranslator');
+const AITranslator = require('./services/AITranslator');
 
 /**
  * Main manager class for translation management.
@@ -45,9 +46,10 @@ class TranslatorManager {
 
         // Scan source for unused and missing keys
         const scanner = new Scanner(this.targetDir, localesDir, this.config);
-        const [analysis, missingFromFiles] = await Promise.all([
+        const [analysis, missingFromFiles, missingKeysContext] = await Promise.all([
             scanner.findUnusedKeys(allKeys),
-            scanner.findMissingKeys(allKeys)
+            scanner.findMissingKeys(allKeys),
+            scanner.findMissingKeys(allKeys, true)
         ]);
 
         return {
@@ -58,7 +60,8 @@ class TranslatorManager {
             results,
             unused: analysis.unused,
             maybeUsed: analysis.maybeUsed,
-            missingFromFiles: missingFromFiles
+            missingFromFiles: missingFromFiles,
+            missingKeysContext: missingKeysContext
         };
     }
 
@@ -112,20 +115,41 @@ class TranslatorManager {
     /**
      * Translates a specific text into target language.
      */
-    async translateSingle(text, targetLang, sourceLang = 'en') {
-        // Support both old and new config formats for backward compatibility
-        let translatorConfig;
-        if (this.config.googleTranslateApiKey) {
-            // Legacy v2 config - provide migration guidance
-            throw new Error('Google Translate API v2 is deprecated. Please update your configuration to use v3 with projectId and keyFilename in the googleTranslate object.');
-        } else if (this.config.googleTranslate) {
-            translatorConfig = this.config.googleTranslate;
-        } else {
-            throw new Error('Google Translate configuration is missing. Please add googleTranslate.projectId and googleTranslate.keyFilename in Settings.');
+    async translateSingle(text, targetLang, sourceLang = 'en', key = null) {
+        const { translator, type } = await this.getTranslator();
+        
+        if (type === 'ai' && key) {
+            const scanner = new Scanner(this.targetDir, await this.storage.getLocalesDir(), this.config);
+            const context = await scanner.findContextForKeys([key]);
+            return await translator.translate(text, targetLang, sourceLang, context);
+        }
+        
+        return await translator.translate(text, targetLang, sourceLang);
+    }
+
+    /**
+     * Gets the configured translator instance.
+     */
+    async getTranslator() {
+        if (this.config.aiTranslate && this.config.aiTranslate.apiKey) {
+            return {
+                translator: new AITranslator(this.config.aiTranslate),
+                type: 'ai'
+            };
         }
 
-        const translator = new GoogleTranslator(translatorConfig);
-        return await translator.translate(text, targetLang, sourceLang);
+        if (this.config.googleTranslate && this.config.googleTranslate.projectId) {
+            return {
+                translator: new GoogleTranslator(this.config.googleTranslate),
+                type: 'google'
+            };
+        }
+
+        if (this.config.googleTranslateApiKey) {
+            throw new Error('Google Translate API v2 is deprecated. Please update your configuration.');
+        }
+
+        throw new Error('No translation service configured. Please add Google Translate or AI settings.');
     }
 
     /**
@@ -159,19 +183,15 @@ class TranslatorManager {
     async bulkTranslate(sourceLang) {
         const report = await this.getBulkTranslateReport(sourceLang);
         const translations = await this.storage.readAll();
+        const { translator, type } = await this.getTranslator();
 
-        // Support both old and new config formats for backward compatibility
-        let translatorConfig;
-        if (this.config.googleTranslateApiKey) {
-            // Legacy v2 config - provide migration guidance
-            throw new Error('Google Translate API v2 is deprecated. Please update your configuration to use v3 with projectId and keyFilename in the googleTranslate object.');
-        } else if (this.config.googleTranslate) {
-            translatorConfig = this.config.googleTranslate;
-        } else {
-            throw new Error('Google Translate configuration is missing. Please add googleTranslate.projectId and googleTranslate.keyFilename in Settings.');
+        // If AI, get context
+        let context = {};
+        if (type === 'ai') {
+            const scanner = new Scanner(this.targetDir, await this.storage.getLocalesDir(), this.config);
+            const allMissingKeys = Object.values(report).flatMap(r => r.keys);
+            context = await scanner.findContextForKeys([...new Set(allMissingKeys)]);
         }
-
-        const translator = new GoogleTranslator(translatorConfig);
 
         const preview = {};
 
@@ -185,7 +205,7 @@ class TranslatorManager {
             const validKeys = validIndices.map(idx => keys[idx]);
 
             if (textsToTranslate.length > 0) {
-                const translatedTexts = await translator.translate(textsToTranslate, lang, sourceLang);
+                const translatedTexts = await translator.translate(textsToTranslate, lang, sourceLang, context);
                 preview[lang] = {};
                 validKeys.forEach((key, idx) => {
                     preview[lang][key] = translatedTexts[idx];
@@ -268,8 +288,9 @@ class TranslatorManager {
      * @returns {Object} - Export data with missing keys and empty values for each language
      */
     async exportMissingFromFiles(sourceLang = 'en') {
-        const { languages, translations, allKeys, missingFromFiles } = await this.scan();
+        const { languages, translations, allKeys, missingFromFiles, missingKeysContext } = await this.scan();
         const exportData = {};
+        const context = {};
 
         // 1. Add keys missing from files (found in code)
         missingFromFiles.forEach(key => {
@@ -277,6 +298,15 @@ class TranslatorManager {
             languages.forEach(lang => {
                 exportData[key][lang] = '';
             });
+            
+            // Add context if available
+            if (missingKeysContext[key]) {
+                context[key] = missingKeysContext[key].occurrences.map(occ => ({
+                    file: occ.file,
+                    line: occ.line,
+                    snippet: occ.context
+                }));
+            }
         });
 
         // 2. Add existing keys that are missing translations in some languages
@@ -305,11 +335,13 @@ class TranslatorManager {
 
         return {
             exportData,
+            context,
             metadata: {
                 languages,
                 sourceLang,
                 totalKeys: Object.keys(exportData).length,
-                exportedAt: new Date().toISOString()
+                exportedAt: new Date().toISOString(),
+                aiFriendly: true
             }
         };
     }

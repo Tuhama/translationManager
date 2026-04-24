@@ -1,15 +1,16 @@
 # Translation Manager UI 🌍
 
-A modern, web-based interface for managing i18n translation files in React and other JavaScript projects.
+A modern, web-based interface for managing i18n translation files in React and other JavaScript projects. Now with **AI-Friendly** features to make localization faster and more accurate.
 
 ## Features
 - **Modern UI**: Dark mode, glassmorphism, and smooth animations.
-- **Auto-Translation**: Integrated Google Translate support for single-key and bulk translations.
+- **AI-Powered Translation**: Support for **OpenAI (GPT-4o)**, **Google Gemini**, and Google Cloud Translate.
+- **Context-Aware Scanning**: Extracts code snippets where translation keys are used, providing crucial context for AI translations.
 - **Missing Keys Detection**: Identifies translation keys used in source code but missing from files.
 - **Cleanup Tool**: Detects and batch-removes unused translation keys.
 - **Normalization**: Synchronizes keys across all languages and sorts them alphabetically with one click.
-- **Export/Import**: Export all missing translations to a JSON file for external translation and import them back easily.
-- **Nested Keys**: Supports dot-notation for nested JSON structures.
+- **Export/Import**: Export all missing translations to an **AI-Friendly** JSON file (including code context) for external translation.
+- **CLI Status**: Machine-readable JSON output for project health monitoring.
 - **Tree View**: Easy navigation and management of translation keys.
 - **Zero Config**: Auto-detects common locales folders.
 
@@ -25,32 +26,41 @@ npx @tuhama/translation-manager
 
 ## Usage
 
-### 📤📥 Export/Import
-You can now export all missing translation keys to a single JSON file. This includes:
-1. Keys found in your source code that are missing from translation files.
-2. Keys that exist in your files but have empty or undefined values in some languages.
+### 🤖 AI-Friendly Localization
+The manager now extracts the **surrounding code** for every translation key it finds. This context is passed to AI models (like OpenAI or Gemini) to ensure highly accurate translations that respect your code's intent.
 
-This is perfect for sending missing work to external translators or services. Once translated, simply import the file back to update your translation files instantly.
+### 📤📥 Export/Import (AI-Enhanced)
+You can export all missing translation keys to a single JSON file. This export is **AI-Ready**, containing code snippets for each key so you can feed it to an LLM for context-aware translations.
+
+### 📊 CLI Status
+Check your translation coverage programmatically:
+```bash
+npx @tuhama/translation-manager status
+```
+Outputs a machine-readable JSON summary of missing keys, coverage percentage, and project health.
 
 ### ⚠️ Missing Keys Detection
-The application automatically scans your source code for translation keys used (e.g., `t('key.name')` or even simple keys like `t('save')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
-
-### 🧹 Cleaning Unused Keys
-Over time, some translation keys might become obsolete. Use the "**Clean**" button to identify and batch-delete keys that are no longer referenced in your source code.
+The application automatically scans your source code for translation keys used (e.g., `t('key.name')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
 
 ### 🪄 Auto-Translation
-Configure Google Cloud Translation API in the settings to enable auto-translation. Use the "**Source-to-All**" button in the editor to quickly populate all languages from a single source translation. 
-
-**Recommended Setup:**
-1. Install Google Cloud CLI: `gcloud auth application-default login`
-2. Add your Google Cloud Project ID in Settings
-3. Start translating!
-
-### 🪄 Normalization
-To keep your translation files organized, use the "**Normalize**" button to synchronize keys across all files and sort them alphabetically.
+Configure Google Cloud, OpenAI, or Gemini in the settings to enable auto-translation. Use the "**Source-to-All**" button in the editor to quickly populate all languages.
 
 ## Configuration
 You can optionally create a `translation.config.json` in your project root:
+
+### Using OpenAI (Recommended for AI Quality)
+```json
+{
+  "path": "src/locales",
+  "aiTranslate": {
+    "provider": "openai",
+    "apiKey": "your-openai-api-key",
+    "model": "gpt-4o"
+  }
+}
+```
+
+### Using Google Cloud Translate
 ```json
 {
   "path": "src/locales",
@@ -60,11 +70,6 @@ You can optionally create a `translation.config.json` in your project root:
 }
 ```
 
-**Authentication Options:**
-- **Recommended**: Use Google Cloud CLI (`gcloud auth application-default login`)
-- **Alternative**: Specify `keyFilename` path to service account JSON file
-- **Environment**: Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-
 ## Development
 To work on this repo:
 1. `npm install`
@@ -72,7 +77,7 @@ To work on this repo:
 3. `npm run dev` (starts both the API and the Vite UI)
 
 ## Limitations
-- **Dynamic Keys**: The scanner uses regex to find translation keys. Highly dynamic keys (e.g. `t(someVar + '.key')` or `t(dynamicValue)`) may not be detected by the "Missing Keys" or "Unused Keys" tools.
+- **Dynamic Keys**: Highly dynamic keys (e.g. `t(someVar + '.key')`) may not be detected by the "Missing Keys" tool.
 - **Namespaces**: Currently optimized for single-namespace or default-namespace projects.
 
 ## License
