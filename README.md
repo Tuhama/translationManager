@@ -8,6 +8,7 @@ A modern, web-based interface for managing i18n translation files in React and o
 - **Missing Keys Detection**: Identifies translation keys used in source code but missing from files.
 - **Cleanup Tool**: Detects and batch-removes unused translation keys.
 - **Normalization**: Synchronizes keys across all languages and sorts them alphabetically with one click.
+- **Export/Import**: Export all missing translations to a JSON file for external translation and import them back easily.
 - **Nested Keys**: Supports dot-notation for nested JSON structures.
 - **Tree View**: Easy navigation and management of translation keys.
 - **Zero Config**: Auto-detects common locales folders.
@@ -24,8 +25,15 @@ npx @tuhama/translation-manager
 
 ## Usage
 
+### 📤📥 Export/Import
+You can now export all missing translation keys to a single JSON file. This includes:
+1. Keys found in your source code that are missing from translation files.
+2. Keys that exist in your files but have empty or undefined values in some languages.
+
+This is perfect for sending missing work to external translators or services. Once translated, simply import the file back to update your translation files instantly.
+
 ### ⚠️ Missing Keys Detection
-The application automatically scans your source code for translation keys used (e.g., `t('key.name')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
+The application automatically scans your source code for translation keys used (e.g., `t('key.name')` or even simple keys like `t('save')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
 
 ### 🧹 Cleaning Unused Keys
 Over time, some translation keys might become obsolete. Use the "**Clean**" button to identify and batch-delete keys that are no longer referenced in your source code.

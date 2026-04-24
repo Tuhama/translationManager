@@ -146,7 +146,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                 {activeTab === 'export' ? (
                     <div className="export-tab">
                         <div className="export-info">
-                            <p>Export translation keys that exist in your source code but are missing from translation files.</p>
+                            <p>Export all missing translation keys. This includes keys found in your source code that are missing from translation files, and keys that exist but are missing translations in some languages.</p>
                         </div>
 
                         {loading ? (

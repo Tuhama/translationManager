@@ -260,14 +260,18 @@ class TranslatorManager {
     }
 
     /**
-     * Exports keys that are used in code but not in translation files.
+     * Exports all missing translation keys.
+     * Includes:
+     * 1. Keys used in code but missing from all translation files.
+     * 2. Keys existing in translation files but missing values in some languages.
+     * @param {string} sourceLang - The source language to use as reference (default: 'en')
      * @returns {Object} - Export data with missing keys and empty values for each language
      */
-    async exportMissingFromFiles() {
-        const { languages, missingFromFiles } = await this.scan();
+    async exportMissingFromFiles(sourceLang = 'en') {
+        const { languages, translations, allKeys, missingFromFiles } = await this.scan();
         const exportData = {};
 
-        // Build structure: {"key": {"lang1": "", "lang2": ""}}
+        // 1. Add keys missing from files (found in code)
         missingFromFiles.forEach(key => {
             exportData[key] = {};
             languages.forEach(lang => {
@@ -275,11 +279,36 @@ class TranslatorManager {
             });
         });
 
+        // 2. Add existing keys that are missing translations in some languages
+        allKeys.forEach(key => {
+            let isMissingInAny = false;
+            const keyLangs = {};
+
+            languages.forEach(lang => {
+                const val = lodash.get(translations[lang], key);
+                if (val === undefined || val === '') {
+                    isMissingInAny = true;
+                    keyLangs[lang] = '';
+                } else {
+                    keyLangs[lang] = val;
+                }
+            });
+
+            if (isMissingInAny) {
+                // If it's already in exportData (from code), we've already handled it.
+                // Otherwise, add it now.
+                if (!exportData[key]) {
+                    exportData[key] = keyLangs;
+                }
+            }
+        });
+
         return {
             exportData,
             metadata: {
                 languages,
-                totalKeys: missingFromFiles.length,
+                sourceLang,
+                totalKeys: Object.keys(exportData).length,
                 exportedAt: new Date().toISOString()
             }
         };
@@ -306,6 +335,9 @@ class TranslatorManager {
         };
 
         for (const key in importData) {
+            // Skip metadata if present
+            if (key === 'metadata') continue;
+
             const keyTranslations = importData[key];
 
             for (const lang in keyTranslations) {

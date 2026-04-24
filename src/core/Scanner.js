@@ -69,7 +69,7 @@ class Scanner {
             for (let i = 1; i < parts.length; i++) {
                 const prefix = parts.slice(0, i).join('.') + '.';
                 const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const dynamicRegex = new RegExp(`(['"\`]${escapedPrefix}['"\`].*?[+])|(['"\`]${escapedPrefix}.*?\$\{)`, 'g');
+                const dynamicRegex = new RegExp("(['\"`]" + escapedPrefix + "['\"`].*?[+])|(['\"`]" + escapedPrefix + ".*?\\${)", 'g');
 
                 if (dynamicRegex.test(combinedContent)) {
                     isMaybeUsed = true;
@@ -107,15 +107,15 @@ class Scanner {
         // 3. i18nKey="key"
         // 4. <Trans i18nKey="key">
         const patterns = [
-            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([^'"\`]+)['"\`]/g
+            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([^'"\`\s]+)['"\`]/g
         ];
 
         patterns.forEach(regex => {
             let match;
             while ((match = regex.exec(combinedContent)) !== null) {
                 const key = match[1];
-                // basic validation to avoid random strings
-                if (key && key.includes('.') && !existingKeysSet.has(key)) {
+                // basic validation to avoid random strings and ensure it's not a translation file path
+                if (key && !existingKeysSet.has(key) && !key.includes('/') && !key.includes('\\')) {
                     missingKeys.add(key);
                 }
             }

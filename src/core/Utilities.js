@@ -23,6 +23,10 @@ class Utilities {
      * Flattens a nested object into a set of dot-notated keys.
      */
     static flattenKeys(obj, prefix = '', keySet = new Set()) {
+        if (!obj || typeof obj !== 'object') {
+            return keySet;
+        }
+
         Object.keys(obj).forEach(key => {
             const fullKey = prefix ? `${prefix}.${key}` : key;
             if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {

@@ -19,6 +19,11 @@ const FormGroup = ({
     className
   ].filter(Boolean).join(' ');
 
+  // Extract actionButton from children if it exists
+  const childArray = React.Children.toArray(children);
+  const mainChild = childArray[0];
+  const actionButton = mainChild?.props?.actionButton;
+
   return (
     <div className={groupClasses}>
       {label && (
@@ -28,11 +33,18 @@ const FormGroup = ({
             {required && <span className="required-indicator"> *</span>}
             {missing && <span className="missing-label"> (Missing)</span>}
           </label>
-          {children?.props?.actionButton && children?.props?.actionButton}
+          {actionButton}
         </div>
       )}
-      {React.cloneElement(children, {
-        className: `${children?.props?.className || ''} ${error ? 'error' : ''}`.trim()
+      {React.Children.map(children, (child) => {
+        if (!React.isValidElement(child)) return child;
+        
+        // Clone child without actionButton and with potential error class
+        const { actionButton: _, ...childProps } = child.props;
+        return React.cloneElement(child, {
+          ...childProps,
+          className: `${child.props.className || ''} ${error ? 'error' : ''}`.trim()
+        });
       })}
       {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-text">{error}</p>}
@@ -52,7 +64,7 @@ export const Input = ({
   required = false,
   disabled = false,
   className = '',
-  actionButton,
+  actionButton, // Destructured but not passed to input
   ...props 
 }) => {
   return (
@@ -65,7 +77,6 @@ export const Input = ({
       required={required}
       disabled={disabled}
       className={className}
-      actionButton={actionButton}
       {...props}
     />
   );
@@ -82,6 +93,7 @@ export const Textarea = ({
   required = false,
   disabled = false,
   className = '',
+  actionButton, // Destructured but not passed to textarea
   ...props 
 }) => {
   return (
