@@ -53,6 +53,29 @@ describe('Scanner', () => {
             const missingKeys = await scanner.findMissingKeys([]);
             expect(missingKeys).toContain('simpleKey');
         });
+
+        it('should find keys with context if requested', async () => {
+            const scanner = new Scanner(testDir, localesDir);
+            await fs.writeFile(path.join(testDir, 'App.js'), `
+                // Line before
+                t('context.key')
+                // Line after
+            `);
+
+            const result = await scanner.findMissingKeys([], true);
+            expect(result['context.key']).toBeDefined();
+            expect(result['context.key'].occurrences[0].context).toContain('// Line before');
+            expect(result['context.key'].occurrences[0].context).toContain("t('context.key')");
+        });
+
+        it('should ignore dynamic template literals', async () => {
+            const scanner = new Scanner(testDir, localesDir);
+            await fs.writeFile(path.join(testDir, 'App.js'), "t(`${dynamic}.key`); t('literal.key')");
+
+            const missingKeys = await scanner.findMissingKeys([]);
+            expect(missingKeys).toContain('literal.key');
+            expect(missingKeys).not.toContain('${dynamic}.key');
+        });
     });
 
     describe('findUnusedKeys', () => {
