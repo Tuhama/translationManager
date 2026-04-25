@@ -1,7 +1,7 @@
 {
   "name": "@tuhama/translation-manager",
-  "version": "0.6.0",
-  "description": "A modern, web-based UI for managing i18n translation files in React and other JavaScript projects.",
+  "version": "0.7.0",
+  "description": "AI-powered i18n management with context-aware scanning and support for OpenAI, Gemini, and Google Translate.",
   "author": "Tuhama <tuhama.gh.qlyshi@gmail.com>",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,8 @@
     "src",
     "web/dist",
     "README.md",
-    "package.json"
+    "package.json",
+    "translations.skill"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev-server\" \"npm run dev-web\"",
@@ -43,7 +44,12 @@
     "ui",
     "cli",
     "translation-manager",
-    "internationalization"
+    "internationalization",
+    "ai",
+    "openai",
+    "gemini",
+    "context-aware",
+    "automation"
   ],
   "bugs": {
     "url": "https://github.com/Tuhama/translationManager/issues"
