@@ -1,6 +1,9 @@
 # Translation Manager UI 🌍
 
-A modern, web-based interface for managing i18n translation files in React and other JavaScript projects. Now with **AI-Friendly** features to make localization faster and more accurate.
+A modern, web-based interface for managing i18n translation files in React and other JavaScript projects. Now with **AI-Friendly** features and an **AI Skill File** to make localization faster and more accurate.
+
+> [!TIP]
+> This project is **AI-Ready**. AI agents can use the included `translations.skill` to automatically audit and manage your translations.
 
 ## Features
 - **Modern UI**: Dark mode, glassmorphism, and smooth animations.

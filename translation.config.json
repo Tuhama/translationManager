@@ -1,7 +1,6 @@
 {
+  "path": "src/locales",
   "googleTranslate": {
-    "projectId": "",
-    "keyFilename": ""
-  },
-  "path": "locales"
+    "projectId": ""
+  }
 }

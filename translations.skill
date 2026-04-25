@@ -1,0 +1,40 @@
+# Skill: Manage Translations
+
+This skill enables an AI agent to efficiently manage i18n translations using the `@tuhama/translation-manager` library.
+
+## Context
+This project uses a custom translation manager that supports AI-powered context extraction. Translation keys are stored in JSON files (usually in `src/locales` or `locales`).
+
+## Workflow
+
+### 1. Audit Translation Health
+Before starting any work, always check the current status:
+- **Command**: `npx @tuhama/translation-manager status`
+- **Goal**: Identify missing translations, unused keys, and coverage percentage across all languages.
+
+### 2. Identify Missing Keys from Code
+Find keys that are used in the source code (e.g., `t('key.name')`) but aren't defined in the JSON files:
+- **Action**: Use the `Scanner` or the Web UI to find "Missing from files" keys.
+- **AI Task**: If you find missing keys, suggest descriptive key names based on their usage.
+
+### 3. Generate Context-Aware Translations
+When translating, leverage the extracted code context:
+- **Rule**: Use the surrounding code snippets to determine the correct nuance (e.g., is "Save" a button or a noun?).
+- **Style**: Maintain consistent tone across the app (default: professional and concise).
+- **Placeholders**: Always preserve `{name}`, `{{count}}`, or other interpolation markers.
+
+### 4. Maintain Key Consistency
+- **Naming**: Use dot-notation for nesting (e.g., `auth.login.button_label`).
+- **Sorting**: Keys should be kept in alphabetical order. Use the "Normalize" feature or `npx @tuhama/translation-manager normalize` (if available).
+- **Cleanup**: Periodically check for unused keys and remove them to keep bundle sizes small.
+
+## AI Guidelines for this Repo
+- **Source Language**: Usually English (`en`).
+- **Target Languages**: Check the `locales` directory for existing languages.
+- **Naming Convention**: Prefer `snake_case` or `camelCase` based on existing patterns in the JSON files.
+- **Key Discovery**: If you see hardcoded strings in `.js`, `.jsx`, `.ts`, or `.tsx` files, recommend wrapping them in `t()` and adding them to the translations.
+
+## Commands Reference
+- `npx @tuhama/translation-manager`: Start the Web UI.
+- `npx @tuhama/translation-manager status`: Get JSON health report.
+- `pnpm test`: Run the test suite to ensure core logic remains robust.
