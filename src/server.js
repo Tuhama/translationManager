@@ -15,131 +15,113 @@ function startServer(targetDir, port = 3000, config = {}) {
     app.use(express.json());
 
     // API endpoints
-    app.get('/api/translations', async (req, res) => {
+    app.get('/api/translations', async (req, res, next) => {
         try {
             const data = await manager.scan();
             res.json(data);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/translations', async (req, res) => {
+    app.post('/api/translations', async (req, res, next) => {
         try {
             const { key, values, format = true } = req.body;
             const options = { sort: format };
             await manager.saveTranslation(key, values, options);
             res.json({ success: true });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.delete('/api/translations', async (req, res) => {
+    app.delete('/api/translations', async (req, res, next) => {
         try {
             const { key } = req.body;
             await manager.deleteTranslations(key);
             res.json({ success: true });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/delete-keys', async (req, res) => {
+    app.post('/api/delete-keys', async (req, res, next) => {
         try {
             const { keys } = req.body;
             await manager.deleteTranslations(keys);
             res.json({ success: true });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/normalize', async (req, res) => {
+    app.post('/api/normalize', async (req, res, next) => {
         try {
             await manager.normalize();
             res.json({ success: true });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/translate', async (req, res) => {
+    const checkConfig = (res) => {
+        const hasAI = manager.config.aiTranslate && manager.config.aiTranslate.apiKey;
+        const hasGoogle = manager.config.googleTranslate && manager.config.googleTranslate.projectId;
+
+        if (!hasAI && !hasGoogle) {
+            res.status(400).json({ 
+                error: 'No translation service configured. Please add OpenAI, Gemini, or Google Translate settings.',
+                configurationRequired: true
+            });
+            return false;
+        }
+        return true;
+    };
+
+    app.post('/api/translate', async (req, res, next) => {
         try {
-            const { text, targetLang, sourceLang } = req.body;
-
-            // Check if Google Translate is configured
-            if (!manager.config.googleTranslate || !manager.config.googleTranslate.projectId) {
-                return res.status(400).json({ 
-                    error: 'Google Translate is not configured. Please add your Google Cloud Project ID and key file in Settings.',
-                    configurationRequired: true
-                });
-            }
-
-            const translatedText = await manager.translateSingle(text, targetLang, sourceLang);
+            if (!checkConfig(res)) return;
+            const { text, targetLang, sourceLang, key } = req.body;
+            const translatedText = await manager.translateSingle(text, targetLang, sourceLang, key);
             res.json({ translatedText });
         } catch (err) {
-            // Check if it's a configuration error
-            if (err.message.includes('Google Cloud Project ID is required') || 
-                err.message.includes('Google Translate configuration is missing')) {
-                return res.status(400).json({ 
-                    error: err.message,
-                    configurationRequired: true
-                });
-            }
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.get('/api/bulk-translate/scan', async (req, res) => {
+    app.get('/api/bulk-translate/scan', async (req, res, next) => {
         try {
             const { sourceLang } = req.query;
             const report = await manager.getBulkTranslateReport(sourceLang || 'en');
             res.json(report);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/bulk-translate/execute', async (req, res) => {
+    app.post('/api/bulk-translate/execute', async (req, res, next) => {
         try {
+            if (!checkConfig(res)) return;
             const { sourceLang } = req.body;
-
-            // Check if Google Translate is configured
-            if (!manager.config.googleTranslate || !manager.config.googleTranslate.projectId) {
-                return res.status(400).json({ 
-                    error: 'Google Translate is not configured. Please add your Google Cloud Project ID and key file in Settings.',
-                    configurationRequired: true
-                });
-            }
-
             const preview = await manager.bulkTranslate(sourceLang || 'en');
             res.json(preview);
         } catch (err) {
-            // Check if it's a configuration error
-            if (err.message.includes('Google Cloud Project ID is required') || 
-                err.message.includes('Google Translate configuration is missing')) {
-                return res.status(400).json({ 
-                    error: err.message,
-                    configurationRequired: true
-                });
-            }
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/bulk-save', async (req, res) => {
+    app.post('/api/bulk-save', async (req, res, next) => {
         try {
             const { data, format = true } = req.body;
             const options = { sort: format };
             await manager.saveBulkTranslations(data, options);
             res.json({ success: true });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.get('/api/export-missing', async (req, res) => {
+    app.get('/api/export-missing', async (req, res, next) => {
         try {
             const exportResult = await manager.exportMissingFromFiles();
 
@@ -149,11 +131,11 @@ function startServer(targetDir, port = 3000, config = {}) {
 
             res.json(exportResult.exportData);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.post('/api/import-translations', async (req, res) => {
+    app.post('/api/import-translations', async (req, res, next) => {
         try {
             const { data, options = {} } = req.body;
 
@@ -164,16 +146,16 @@ function startServer(targetDir, port = 3000, config = {}) {
             const importStats = await manager.importTranslations(data, options);
             res.json({ success: true, stats: importStats });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
-    app.get('/api/export-missing/preview', async (req, res) => {
+    app.get('/api/export-missing/preview', async (req, res, next) => {
         try {
             const exportResult = await manager.exportMissingFromFiles();
             res.json(exportResult);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
@@ -181,13 +163,13 @@ function startServer(targetDir, port = 3000, config = {}) {
         res.json(manager.config);
     });
 
-    app.post('/api/settings', async (req, res) => {
+    app.post('/api/settings', async (req, res, next) => {
         try {
             const { settings } = req.body;
             await manager.saveConfig(settings);
             res.json({ success: true, config: manager.config });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 
@@ -195,6 +177,21 @@ function startServer(targetDir, port = 3000, config = {}) {
     const buildPath = path.resolve(__dirname, '../web/dist');
     app.use(express.static(buildPath));
     app.use(history('index.html', { root: buildPath }));
+
+    // Global error handler
+    app.use((err, req, res, next) => {
+        console.error('\x1b[31mError:\x1b[0m', err.message);
+        
+        // Check for specific error types
+        const isConfigError = err.message.includes('not configured') || 
+                            err.message.includes('API Key is required') ||
+                            err.message.includes('Project ID is required');
+
+        res.status(isConfigError ? 400 : 500).json({
+            error: err.message,
+            configurationRequired: isConfigError
+        });
+    });
 
     app.listen(port, () => {
         console.log(`\x1b[32m✔\x1b[0m Translation Manager UI is running at http://localhost:${port}`);

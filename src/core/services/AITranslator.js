@@ -87,8 +87,15 @@ ${textsToTranslate.map(t => `- "${t}"`).join('\n')}
             })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `OpenAI API returned status ${response.status}`);
+        }
+
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
+        if (!data.choices || data.choices.length === 0) {
+            throw new Error('OpenAI API returned no results');
+        }
         return data.choices[0].message.content;
     }
 
@@ -102,8 +109,15 @@ ${textsToTranslate.map(t => `- "${t}"`).join('\n')}
             })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `Gemini API returned status ${response.status}`);
+        }
+
         const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
+        if (!data.candidates || data.candidates.length === 0 || !data.candidates[0].content?.parts?.length) {
+            throw new Error('Gemini API returned no results');
+        }
         return data.candidates[0].content.parts[0].text;
     }
 }

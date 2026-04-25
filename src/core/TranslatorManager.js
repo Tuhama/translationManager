@@ -69,6 +69,9 @@ class TranslatorManager {
      * Saves a translation key across all language files.
      */
     async saveTranslation(key, values, options = {}) {
+        if (!key) throw new Error('Key is required');
+        if (!values || typeof values !== 'object') throw new Error('Values must be an object');
+
         const translations = await this.storage.readAll();
         const languages = Object.keys(translations);
 
@@ -84,6 +87,8 @@ class TranslatorManager {
      * Deletes one or more translation keys across all language files.
      */
     async deleteTranslations(keys) {
+        if (!keys || (Array.isArray(keys) && keys.length === 0)) return;
+        
         const keysToDelete = Array.isArray(keys) ? keys : [keys];
         const translations = await this.storage.readAll();
         const languages = Object.keys(translations);
