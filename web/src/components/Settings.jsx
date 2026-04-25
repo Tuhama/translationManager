@@ -7,6 +7,9 @@ import { Modal, Button, FormGroup, Input, Alert } from './ui';
 const Settings = ({ onClose }) => {
     const [projectId, setProjectId] = useState('');
     const [keyFilename, setKeyFilename] = useState('');
+    const [aiProvider, setAiProvider] = useState('openai');
+    const [aiApiKey, setAiApiKey] = useState('');
+    const [aiModel, setAiModel] = useState('');
     const [localesPath, setLocalesPath] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
@@ -17,16 +20,11 @@ const Settings = ({ onClose }) => {
                 const response = await fetch('/api/config');
                 const config = await response.json();
 
-                // Support both old and new config formats
-                if (config.googleTranslateApiKey) {
-                    setMessage({ 
-                        type: 'warning', 
-                        text: 'Your configuration uses the deprecated Google Translate API v2. Please update to v3 format below.' 
-                    });
-                }
-
                 setProjectId(config.googleTranslate?.projectId || '');
                 setKeyFilename(config.googleTranslate?.keyFilename || '');
+                setAiProvider(config.aiTranslate?.provider || 'openai');
+                setAiApiKey(config.aiTranslate?.apiKey || '');
+                setAiModel(config.aiTranslate?.model || '');
                 setLocalesPath(config.path || '');
             } catch (error) {
                 console.error('Failed to fetch config:', error);
@@ -48,6 +46,11 @@ const Settings = ({ onClose }) => {
                             projectId: projectId,
                             keyFilename: keyFilename
                         },
+                        aiTranslate: {
+                            provider: aiProvider,
+                            apiKey: aiApiKey,
+                            model: aiModel
+                        },
                         path: localesPath 
                     } 
                 })
@@ -55,7 +58,6 @@ const Settings = ({ onClose }) => {
             if (response.ok) {
                 setMessage({ type: 'success', text: 'Settings saved successfully!' });
                 setTimeout(() => {
-                    // Trigger a reload of the main translation data since the path might have changed
                     window.location.reload(); 
                 }, 1000);
             } else {
@@ -106,14 +108,44 @@ const Settings = ({ onClose }) => {
                 />
             </FormGroup>
 
+            <div className="settings-divider">AI Translation (OpenAI / Gemini)</div>
+
+            <FormGroup label="AI Provider">
+                <select 
+                    value={aiProvider} 
+                    onChange={(e) => setAiProvider(e.target.value)}
+                    className="settings-input"
+                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}
+                >
+                    <option value="openai">OpenAI (GPT-4o)</option>
+                    <option value="gemini">Google Gemini (1.5 Flash)</option>
+                </select>
+            </FormGroup>
+
+            <FormGroup label="API Key">
+                <Input 
+                    type="password" 
+                    value={aiApiKey} 
+                    onChange={(e) => setAiApiKey(e.target.value)} 
+                    placeholder="sk-..."
+                    className="settings-input"
+                />
+            </FormGroup>
+
+            <FormGroup label="Model (Optional)" helpText="Defaults: gpt-4o for OpenAI, gemini-1.5-flash for Gemini.">
+                <Input 
+                    type="text" 
+                    value={aiModel} 
+                    onChange={(e) => setAiModel(e.target.value)} 
+                    placeholder="e.g. gpt-3.5-turbo"
+                    className="settings-input"
+                />
+            </FormGroup>
+
+            <div className="settings-divider">Google Cloud Translation (v3)</div>
+
             <FormGroup
                 label="Google Cloud Project ID"
-                helpText={
-                    <>
-                        Required for auto-translation features (Magic Wand and Bulk Translate). 
-                        Create a project and enable the Translation API in the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>.
-                    </>
-                }
             >
                 <Input 
                     type="text" 
@@ -125,22 +157,14 @@ const Settings = ({ onClose }) => {
             </FormGroup>
 
             <FormGroup
-                label="Authentication Method"
-                helpText={
-                    <>
-                        <strong>Recommended:</strong> Use Google Cloud CLI authentication by running <code>gcloud auth application-default login</code>. 
-                        Leave the field below empty to use this method.<br/><br/>
-                        <strong>Alternative:</strong> Provide a path to your service account JSON key file. 
-                        Create a service account with "Cloud Translation API User" role and download the key file.
-                        You can also set the GOOGLE_APPLICATION_CREDENTIALS environment variable instead.
-                    </>
-                }
+                label="Service Account Key Path (Optional)"
+                helpText="Leave empty to use Google Cloud CLI auth (recommended)."
             >
                 <Input 
                     type="text" 
                     value={keyFilename} 
                     onChange={(e) => setKeyFilename(e.target.value)} 
-                    placeholder="Leave empty to use Google Cloud CLI auth, or enter path to service-account-key.json"
+                    placeholder="path/to/service-account-key.json"
                     className="settings-input"
                 />
             </FormGroup>

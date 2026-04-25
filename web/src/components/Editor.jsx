@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNestedValue } from '../utils/objectUtils';
-import { Button, FormGroup, Input, Textarea } from './ui';
+import { Button, FormGroup, Input, Textarea, Alert } from './ui';
 
 /**
  * Handles editing and creating translation entries.
@@ -19,9 +19,18 @@ const Editor = ({
   const [isEditing, setIsEditing] = useState(false);
   const [translatingLang, setTranslatingLang] = useState(null);
   const [translatingAll, setTranslatingAll] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (error) {
+        const timer = setTimeout(() => setError(null), 5000);
+        return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Sync form data when selectedKey or translations change
   useEffect(() => {
+    setError(null);
     if (selectedKey === null) return;
 
     if (selectedKey === '') {
@@ -56,22 +65,23 @@ const Editor = ({
     const text = formData[sourceLang];
 
     if (!text) {
-      alert("Please enter a source translation first.");
+      setError("Please enter a source translation first.");
       return;
     }
 
     setTranslatingLang(targetLang);
+    setError(null);
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, targetLang, sourceLang })
+        body: JSON.stringify({ text, targetLang, sourceLang, key: selectedKey })
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       setFormData(prev => ({ ...prev, [targetLang]: data.translatedText }));
     } catch (error) {
-      alert(`Translation failed: ${error.message}`);
+      setError(`Translation failed: ${error.message}`);
     } finally {
       setTranslatingLang(null);
     }
@@ -82,11 +92,12 @@ const Editor = ({
     const text = formData[sourceLang];
 
     if (!text) {
-        alert("Please enter at least one translation to use as source.");
+        setError("Please enter at least one translation to use as source.");
         return;
     }
 
     setTranslatingAll(true);
+    setError(null);
     try {
         const targets = languages.filter(l => l !== sourceLang);
         const newFormData = { ...formData };
@@ -95,16 +106,17 @@ const Editor = ({
             const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, targetLang, sourceLang })
+                body: JSON.stringify({ text, targetLang, sourceLang, key: selectedKey })
             });
             const data = await response.json();
+            if (data.error) throw new Error(data.error);
             if (data.translatedText) {
                 newFormData[targetLang] = data.translatedText;
             }
         }
         setFormData(newFormData);
     } catch (error) {
-        alert("Bulk translation failed. Check your API key.");
+        setError(error.message || "Bulk translation failed.");
     } finally {
         setTranslatingAll(false);
     }
@@ -145,6 +157,13 @@ const Editor = ({
           </Button>
         )}
       </div>
+
+      {error && (
+        <Alert type="error" onClose={() => setError(null)} style={{ marginBottom: '16px' }}>
+          {error}
+        </Alert>
+      )}
+
       <form onSubmit={handleSubmit}>
         {!isEditing && (
           <FormGroup

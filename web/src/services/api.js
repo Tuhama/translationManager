@@ -7,7 +7,10 @@ class TranslationService {
    */
   static async fetchTranslations() {
     const res = await fetch('/api/translations');
-    if (!res.ok) throw new Error('Failed to fetch translations');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to fetch translations');
+    }
     return await res.json();
   }
 
@@ -20,7 +23,10 @@ class TranslationService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, values, format })
     });
-    if (!res.ok) throw new Error('Save failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Save failed');
+    }
     return await res.json();
   }
 
@@ -33,7 +39,10 @@ class TranslationService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key })
     });
-    if (!res.ok) throw new Error('Delete failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Delete failed');
+    }
     return await res.json();
   }
 
@@ -46,7 +55,10 @@ class TranslationService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keys })
     });
-    if (!res.ok) throw new Error('Batch delete failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Batch delete failed');
+    }
     return await res.json();
   }
 
@@ -59,7 +71,10 @@ class TranslationService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data, format })
     });
-    if (!res.ok) throw new Error('Bulk save failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Bulk save failed');
+    }
     return await res.json();
   }
 
@@ -68,7 +83,10 @@ class TranslationService {
    */
   static async normalize() {
     const res = await fetch('/api/normalize', { method: 'POST' });
-    if (!res.ok) throw new Error('Normalization failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Normalization failed');
+    }
     return await res.json();
   }
 
@@ -77,7 +95,10 @@ class TranslationService {
    */
   static async exportMissingKeys() {
     const res = await fetch('/api/export-missing');
-    if (!res.ok) throw new Error('Export failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Export failed');
+    }
 
     // Trigger download
     const blob = await res.blob();
@@ -98,7 +119,10 @@ class TranslationService {
    */
   static async getExportPreview() {
     const res = await fetch('/api/export-missing/preview');
-    if (!res.ok) throw new Error('Failed to get export preview');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to get export preview');
+    }
     return await res.json();
   }
 
@@ -111,7 +135,10 @@ class TranslationService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data, options })
     });
-    if (!res.ok) throw new Error('Import failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Import failed');
+    }
     return await res.json();
   }
 }

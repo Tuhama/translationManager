@@ -6,6 +6,7 @@ import Editor from './components/Editor'
 import Settings from './components/Settings'
 import AutoTranslateTool from './components/AutoTranslateTool'
 import ExportImportTool from './components/ExportImportTool'
+import Alert from './components/ui/Alert'
 import { useTranslations } from './hooks/useTranslations'
 
 /**
@@ -13,11 +14,21 @@ import { useTranslations } from './hooks/useTranslations'
  * Acts as a lightweight orchestrator for the Sidebar and Editor.
  */
 function App() {
-  const { data, isLoading, actions } = useTranslations()
+  const { data, isLoading, error: fetchError, actions } = useTranslations()
   const [selectedKey, setSelectedKey] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showAutoTranslate, setShowAutoTranslate] = useState(false)
   const [showExportImport, setShowExportImport] = useState(false)
+  const [error, setError] = useState(null)
+
+  const activeError = error || fetchError
+
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [error])
 
   const handleSave = async (key, values) => {
     // Create a custom dialog with three options
@@ -34,9 +45,11 @@ function App() {
     const format = choice === '1'; // true for formatted, false for unformatted
 
     try {
+      setError(null)
       await actions.save(key, values, format)
       setSelectedKey(key)
     } catch (err) {
+      setError(err.message)
       console.error('Save failed', err)
     }
   }
@@ -44,9 +57,11 @@ function App() {
   const handleDelete = async (key) => {
     if (!window.confirm(`Are you sure you want to delete "${key}"?`)) return
     try {
+      setError(null)
       await actions.deleteSingle(key)
       if (selectedKey === key) setSelectedKey(null)
     } catch (err) {
+      setError(err.message)
       console.error('Delete failed', err)
     }
   }
@@ -54,12 +69,16 @@ function App() {
   const handleNormalize = async () => {
     if (!window.confirm('This will synchronize all keys and sort files alphabetically. Continue?')) return;
     try {
+      setError(null)
       await actions.normalize()
       alert('Normalization complete!')
     } catch (err) {
+      setError(err.message)
       console.error('Normalization failed', err)
     }
   }
+
+  const activeError = error || fetchError
 
   return (
     <div className="app-container">
@@ -73,6 +92,13 @@ function App() {
         onSelectKey={setSelectedKey}
         data={data}
       />
+      {activeError && (
+        <div style={{ padding: '0 24px', marginTop: '16px' }}>
+          <Alert type="error" onClose={() => setError(null)}>
+            {activeError}
+          </Alert>
+        </div>
+      )}
       <div className="app-body">
         <Sidebar 
           selectedKey={selectedKey}
