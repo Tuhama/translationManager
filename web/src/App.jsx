@@ -16,6 +16,7 @@ import { useTranslations } from './hooks/useTranslations'
 function App() {
   const { data, isLoading, error: fetchError, actions } = useTranslations()
   const [selectedKey, setSelectedKey] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showAutoTranslate, setShowAutoTranslate] = useState(false)
   const [showExportImport, setShowExportImport] = useState(false)
@@ -29,6 +30,14 @@ function App() {
       return () => clearTimeout(timer)
     }
   }, [error])
+
+  // Close sidebar on mobile when a key is selected
+  const handleSelectKey = (key) => {
+    setSelectedKey(key)
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false)
+    }
+  }
 
   const handleSave = async (key, values) => {
     // Create a custom dialog with three options
@@ -78,18 +87,17 @@ function App() {
     }
   }
 
-  const activeError = error || fetchError
-
   return (
-    <div className="app-container">
+    <div className={`app-container ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <Header 
-        onNewKey={() => setSelectedKey('')}
+        onNewKey={() => handleSelectKey('')}
         onNormalize={handleNormalize}
         onDeleteMultiple={actions.deleteMultiple}
         onShowSettings={() => setShowSettings(true)}
         onShowAutoTranslate={() => setShowAutoTranslate(true)}
         onShowExportImport={() => setShowExportImport(true)}
-        onSelectKey={setSelectedKey}
+        onSelectKey={handleSelectKey}
+        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         data={data}
       />
       {activeError && (
@@ -102,17 +110,20 @@ function App() {
       <div className="app-body">
         <Sidebar 
           selectedKey={selectedKey}
-          onSelectKey={setSelectedKey}
+          onSelectKey={handleSelectKey}
           onDeleteKey={handleDelete}
           isLoading={isLoading}
           data={data}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
+        {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
         <main className="editor">
           <Editor 
             selectedKey={selectedKey}
-            setSelectedKey={setSelectedKey}
+            setSelectedKey={handleSelectKey}
             onSave={handleSave}
-            onCancel={() => setSelectedKey(null)}
+            onCancel={() => handleSelectKey(null)}
             languages={data.languages}
             translations={data.translations}
             allKeys={data.allKeys}

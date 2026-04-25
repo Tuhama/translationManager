@@ -141,10 +141,28 @@ const Editor = ({
     );
   }
 
+  const renderKeyBreadcrumbs = (key) => {
+    if (!key) return null;
+    const parts = key.split('.');
+    return (
+      <div className="key-breadcrumbs">
+        {parts.map((part, index) => (
+          <React.Fragment key={index}>
+            <span className="breadcrumb-part">{part}</span>
+            {index < parts.length - 1 && <span className="breadcrumb-separator">/</span>}
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="editor-form">
       <div className="editor-header-row">
-        <h2>{isEditing ? `Edit: ${selectedKey}` : 'Create New Key'}</h2>
+        <div className="editor-title-container">
+          <span className="editor-subtitle">{isEditing ? 'Editing Translation' : 'New Translation Key'}</span>
+          <h2>{isEditing ? renderKeyBreadcrumbs(selectedKey) : 'Create New Key'}</h2>
+        </div>
         {isEditing && (
           <Button 
             variant="magic" 
@@ -164,51 +182,61 @@ const Editor = ({
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit}>
-        {!isEditing && (
-          <FormGroup
-            label="Key (use dots for nesting)"
-            required
-          >
-            <Input 
-              name="newKey" 
-              type="text" 
-              placeholder="e.g. common.buttons.save" 
-              required 
-              onBlur={handleBlurKey}
-            />
-          </FormGroup>
-        )}
-        {languages.map(lang => {
-          const magicButton = (
-            <Button 
-              variant="icon" 
-              onClick={() => handleTranslate(lang)}
-              disabled={translatingLang === lang || translatingAll}
-              title="Auto-translate this field"
-              className="magic-wand"
-              icon={translatingLang === lang ? '⏳' : '🪄'}
-            />
-          );
-
-          return (
+      <form onSubmit={handleSubmit} className="editor-main-form">
+        <div className="form-scroll-area">
+          {!isEditing && (
             <FormGroup
-              key={lang}
-              label={lang.toUpperCase()}
-              missing={formData[lang] === ''}
+              label="Key (use dots for nesting)"
+              required
+              className="full-width-field"
             >
-              <Textarea 
-                value={formData[lang] || ''}
-                onChange={(e) => setFormData({ ...formData, [lang]: e.target.value })}
-                placeholder={`Translation in ${lang}...`}
-                actionButton={magicButton}
+              <Input 
+                name="newKey" 
+                type="text" 
+                placeholder="e.g. common.buttons.save" 
+                required 
+                onBlur={handleBlurKey}
               />
             </FormGroup>
-          );
-        })}
-        <div className="form-actions">
-          <Button type="submit" variant="primary">Save Translation</Button>
-          <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
+          )}
+          
+          <div className="languages-grid">
+            {languages.map(lang => {
+              const magicButton = (
+                <Button 
+                  variant="icon" 
+                  onClick={() => handleTranslate(lang)}
+                  disabled={translatingLang === lang || translatingAll}
+                  title="Auto-translate this field"
+                  className="magic-wand"
+                  icon={translatingLang === lang ? '⏳' : '🪄'}
+                />
+              );
+
+              return (
+                <FormGroup
+                  key={lang}
+                  label={lang.toUpperCase()}
+                  missing={formData[lang] === ''}
+                >
+                  <Textarea 
+                    value={formData[lang] || ''}
+                    onChange={(e) => setFormData({ ...formData, [lang]: e.target.value })}
+                    placeholder={`Translation in ${lang}...`}
+                    actionButton={magicButton}
+                    rows={4}
+                  />
+                </FormGroup>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="form-actions-sticky">
+          <div className="form-actions-content">
+            <Button type="submit" variant="primary">Save Changes</Button>
+            <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
+          </div>
         </div>
       </form>
     </div>

@@ -10,7 +10,9 @@ const Sidebar = ({
   onSelectKey,
   onDeleteKey,
   isLoading,
-  data
+  data,
+  isOpen,
+  onClose
 }) => {
   const [search, setSearch] = useState('');
 
@@ -21,7 +23,11 @@ const Sidebar = ({
   }, [data.allKeys, search]);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-header-mobile">
+        <span className="sidebar-title">Menu</span>
+        <button className="sidebar-close" onClick={onClose}>&times;</button>
+      </div>
       <div className="sidebar-search">
         <input 
           type="text" 

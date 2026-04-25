@@ -1,6 +1,6 @@
-import React from 'react';
-import CleanupTool from './CleanupTool';
-import MissingKeysTool from './MissingKeysTool';
+import React from "react";
+import CleanupTool from "./CleanupTool";
+import MissingKeysTool from "./MissingKeysTool";
 
 /**
  * Main application header with branding and primary actions
@@ -13,44 +13,84 @@ const Header = ({
   onShowAutoTranslate,
   onShowExportImport,
   onSelectKey,
-  data
+  toggleSidebar,
+  data,
 }) => {
   return (
     <header className="app-header">
       <div className="header-left">
+        <button className="mobile-menu-toggle" onClick={toggleSidebar} aria-label="Toggle Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <div className="brand-section">
-          <img src="/logo.png" alt="Logo" className="header-logo" />
-          <h1 className="app-title">Translation Manager</h1>
+          <div className="logo-container">
+            <img src="/logo.png" alt="Logo" className="header-logo" />
+            <div className="logo-glow"></div>
+          </div>
+          <div className="title-stack">
+            <div className="title-row">
+              <h1 className="app-title">Translation Manager</h1>
+              <span className="version-badge">v0.7.1</span>
+            </div>
+            <div className="header-stats">
+              <span className="stat-item">
+                <span className="stat-value">{data.languages?.length || 0}</span>
+                <span className="stat-label">Languages</span>
+              </span>
+              <span className="stat-divider"></span>
+              <span className="stat-item">
+                <span className="stat-value">{data.allKeys?.length || 0}</span>
+                <span className="stat-label">Keys</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="header-right">
         <div className="header-actions">
+          <MissingKeysTool data={data} onSelectKey={onSelectKey} />
+
           <button className="header-primary-btn" onClick={onNewKey}>
             <span className="btn-icon">➕</span>
             New Key
           </button>
 
-          <button className="header-btn" onClick={onNormalize} title="Normalize Files">
-            <span className="btn-icon">🪄</span>
-            Normalize
-          </button>
+          <div className="dropdown-container">
+            <button className="header-btn dropdown-trigger">
+              <span className="btn-icon">🛠️</span>
+              Tools
+              <span className="dropdown-arrow">▼</span>
+            </button>
+            <div className="dropdown-menu">
+              <button className="dropdown-item" onClick={onNormalize}>
+                <span className="item-icon">🪄</span>
+                Normalize Files
+              </button>
+              
+              <div className="dropdown-divider"></div>
+              
+              <CleanupTool data={data} onDeleteMultiple={onDeleteMultiple} isDropdownItem />
+              
+              <button className="dropdown-item" onClick={onShowAutoTranslate}>
+                <span className="item-icon">🤖</span>
+                Auto-Translate
+              </button>
+              
+              <button className="dropdown-item" onClick={onShowExportImport}>
+                <span className="item-icon">📤</span>
+                Export/Import
+              </button>
+            </div>
+          </div>
 
-          <CleanupTool data={data} onDeleteMultiple={onDeleteMultiple} />
-
-          <button className="header-btn" onClick={onShowAutoTranslate} title="Auto-Translate">
-            <span className="btn-icon">🤖</span>
-            Auto-Translate
-          </button>
-
-          <button className="header-btn" onClick={onShowExportImport} title="Export/Import">
-            <span className="btn-icon">📤</span>
-            Export/Import
-          </button>
-
-          <MissingKeysTool data={data} onSelectKey={onSelectKey} />
-
-          <button className="header-btn" onClick={onShowSettings} title="Settings">
+          <button
+            className="header-btn"
+            onClick={onShowSettings}
+            title="Settings"
+          >
             <span className="btn-icon">⚙️</span>
             Settings
           </button>
