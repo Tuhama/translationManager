@@ -106,7 +106,7 @@ class Scanner {
         // 4. <Trans i18nKey="key">
         // 5. useTranslation(['namespace']) -> t('key')
         const patterns = [
-            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([^'"\`\s]+)['"\`]/g
+            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([a-zA-Z0-9._-]+)['"\`]/g
         ];
 
         for (const file of files) {
@@ -119,6 +119,16 @@ class Scanner {
                 regex.lastIndex = 0;
                 while ((match = regex.exec(content)) !== null) {
                     const key = match[1];
+                    
+                    // VALIDATION: Skip dynamic keys
+                    // 1. Skip if it contains template literal placeholders ${...}
+                    // 2. Skip if it's just the placeholder prefix ${
+                    // 3. Skip if it looks like a variable (no dots, no spaces, starts with lowercase and followed by camelCase etc) 
+                    //    - actually, dots are good, but ${ is the killer.
+                    if (key.includes('${') || key.includes('`') || key.startsWith('$')) {
+                        continue;
+                    }
+
                     // basic validation to avoid random strings and ensure it's not a translation file path
                     if (key && !existingKeysSet.has(key) && !key.includes('/') && !key.includes('\\')) {
                         if (includeContext) {
