@@ -114,8 +114,7 @@ const Settings = ({ onClose }) => {
                 <select 
                     value={aiProvider} 
                     onChange={(e) => setAiProvider(e.target.value)}
-                    className="settings-input"
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}
+                    className="settings-select"
                 >
                     <option value="openai">OpenAI (GPT-4o)</option>
                     <option value="gemini">Google Gemini (1.5 Flash)</option>

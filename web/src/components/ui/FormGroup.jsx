@@ -10,8 +10,11 @@ const FormGroup = ({
   error, 
   required = false,
   className = '',
-  missing = false 
+  missing = false,
+  id: providedId
 }) => {
+  const generatedId = React.useMemo(() => providedId || `field-${Math.random().toString(36).substr(2, 9)}`, [providedId]);
+  
   const groupClasses = [
     'form-group',
     missing && 'missing',
@@ -28,7 +31,7 @@ const FormGroup = ({
     <div className={groupClasses}>
       {label && (
         <div className="label-row">
-          <label>
+          <label htmlFor={generatedId}>
             {label}
             {required && <span className="required-indicator"> *</span>}
             {missing && <span className="missing-label"> (Missing)</span>}
@@ -39,10 +42,11 @@ const FormGroup = ({
       {React.Children.map(children, (child) => {
         if (!React.isValidElement(child)) return child;
         
-        // Clone child without actionButton and with potential error class
+        // Clone child without actionButton and with potential error class and ID
         const { actionButton: _, ...childProps } = child.props;
         return React.cloneElement(child, {
           ...childProps,
+          id: child.props.id || generatedId,
           className: `${child.props.className || ''} ${error ? 'error' : ''}`.trim()
         });
       })}
