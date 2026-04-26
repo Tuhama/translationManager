@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const history = require('express-history-api-fallback');
 const TranslatorManager = require('./core/TranslatorManager');
+const pkg = require('../package.json');
 
 /**
  * Starts the translation manager server.
@@ -194,7 +195,7 @@ function startServer(targetDir, port = 3000, config = {}) {
     });
 
     app.listen(port, () => {
-        console.log(`\x1b[32m✔\x1b[0m Translation Manager UI is running at http://localhost:${port}`);
+        console.log(`\x1b[32m✔\x1b[0m Translation Manager v${pkg.version} is running at http://localhost:${port}`);
     });
 }
 

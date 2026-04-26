@@ -19,7 +19,11 @@ const Header = ({
   return (
     <header className="app-header">
       <div className="header-left">
-        <button className="mobile-menu-toggle" onClick={toggleSidebar} aria-label="Toggle Menu">
+        <button
+          className="mobile-menu-toggle"
+          onClick={toggleSidebar}
+          aria-label="Toggle Menu"
+        >
           <span></span>
           <span></span>
           <span></span>
@@ -32,11 +36,13 @@ const Header = ({
           <div className="title-stack">
             <div className="title-row">
               <h1 className="app-title">Translation Manager</h1>
-              <span className="version-badge">v0.7.1</span>
+              <span className="version-badge">{__APP_VERSION__}</span>
             </div>
             <div className="header-stats">
               <span className="stat-item">
-                <span className="stat-value">{data.languages?.length || 0}</span>
+                <span className="stat-value">
+                  {data.languages?.length || 0}
+                </span>
                 <span className="stat-label">Languages</span>
               </span>
               <span className="stat-divider"></span>
@@ -45,8 +51,13 @@ const Header = ({
                 <span className="stat-label">Keys</span>
               </span>
               <span className="stat-divider"></span>
-              <span className="stat-item" title="Keys that might not be used in the source code">
-                <span className="stat-value">{(data.unused?.length || 0) + (data.maybeUsed?.length || 0)}</span>
+              <span
+                className="stat-item"
+                title="Keys that might not be used in the source code"
+              >
+                <span className="stat-value">
+                  {(data.unused?.length || 0) + (data.maybeUsed?.length || 0)}
+                </span>
                 <span className="stat-label">Probable Unused</span>
               </span>
             </div>
@@ -74,16 +85,20 @@ const Header = ({
                 <span className="item-icon">🪄</span>
                 Normalize Files
               </button>
-              
+
               <div className="dropdown-divider"></div>
-              
-              <CleanupTool data={data} onDeleteMultiple={onDeleteMultiple} isDropdownItem />
-              
+
+              <CleanupTool
+                data={data}
+                onDeleteMultiple={onDeleteMultiple}
+                isDropdownItem
+              />
+
               <button className="dropdown-item" onClick={onShowAutoTranslate}>
                 <span className="item-icon">🤖</span>
                 Auto-Translate
               </button>
-              
+
               <button className="dropdown-item" onClick={onShowExportImport}>
                 <span className="item-icon">📤</span>
                 Export/Import
