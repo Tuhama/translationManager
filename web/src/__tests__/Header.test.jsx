@@ -36,7 +36,7 @@ describe('Header Component', () => {
 
   it('calls onNormalize when Normalize button is clicked', () => {
     render(<Header {...defaultProps} />);
-    fireEvent.click(screen.getByText('Normalize'));
+    fireEvent.click(screen.getByText(/Normalize/i));
     expect(defaultProps.onNormalize).toHaveBeenCalled();
   });
 
@@ -51,5 +51,14 @@ describe('Header Component', () => {
     render(<Header {...defaultProps} />);
     expect(screen.getByTestId('cleanup-tool')).toBeInTheDocument();
     expect(screen.getByTestId('missing-keys-tool')).toBeInTheDocument();
+  });
+
+  it('calls onShowAutoTranslate when Auto-Translate is clicked in Tools dropdown', () => {
+    render(<Header {...defaultProps} />);
+    
+    // Tools dropdown menu items are in the DOM but might be hidden by CSS
+    // fireEvent.click works regardless of CSS visibility unless we use userEvent
+    fireEvent.click(screen.getByText('Auto-Translate'));
+    expect(defaultProps.onShowAutoTranslate).toHaveBeenCalled();
   });
 });
