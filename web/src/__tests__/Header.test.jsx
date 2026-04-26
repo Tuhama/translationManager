@@ -61,4 +61,19 @@ describe('Header Component', () => {
     fireEvent.click(screen.getByText('Auto-Translate'));
     expect(defaultProps.onShowAutoTranslate).toHaveBeenCalled();
   });
+
+  it('renders stats correctly including probable unused', () => {
+    const data = {
+      languages: ['en', 'es'],
+      allKeys: ['a', 'b', 'c'],
+      unused: ['u1'],
+      maybeUsed: ['m1', 'm2']
+    };
+    render(<Header {...defaultProps} data={data} />);
+    
+    expect(screen.getByText('2')).toBeInTheDocument(); // Languages
+    const countStats = screen.getAllByText('3');
+    expect(countStats.length).toBe(2); // Keys and Probable Unused both have 3
+    expect(screen.getByText('Probable Unused')).toBeInTheDocument();
+  });
 });

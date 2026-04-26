@@ -44,6 +44,11 @@ const Header = ({
                 <span className="stat-value">{data.allKeys?.length || 0}</span>
                 <span className="stat-label">Keys</span>
               </span>
+              <span className="stat-divider"></span>
+              <span className="stat-item" title="Keys that might not be used in the source code">
+                <span className="stat-value">{(data.unused?.length || 0) + (data.maybeUsed?.length || 0)}</span>
+                <span className="stat-label">Probable Unused</span>
+              </span>
             </div>
           </div>
         </div>
