@@ -45,49 +45,74 @@ class Scanner {
      */
     async findUnusedKeys(allKeys) {
         const files = await this.getFiles();
-        const contents = await Promise.all(files.map(f => fs.readFile(f, 'utf-8')));
-        const combinedContent = contents.join('\n---\n');
-
         const used = new Set();
         const maybeUsed = new Set();
-        const unused = [];
 
-        allKeys.forEach(key => {
-            // 1. Literal usage
-            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const literalRegex = new RegExp(`['"\`]${escapedKey}['"\`]`, 'g');
+        for (const file of files) {
+            const content = await fs.readFile(file, 'utf-8');
+            const namespace = this.extractNamespace(content);
 
-            if (literalRegex.test(combinedContent)) {
-                used.add(key);
-                return;
-            }
+            allKeys.forEach(key => {
+                // If key is already marked as used, skip
+                if (used.has(key)) return;
 
-            // 2. Dynamic usage
-            const parts = key.split('.');
-            let isMaybeUsed = false;
-
-            for (let i = 1; i < parts.length; i++) {
-                const prefix = parts.slice(0, i).join('.') + '.';
-                const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const dynamicRegex = new RegExp("(['\"`]" + escapedPrefix + "['\"`].*?[+])|(['\"`]" + escapedPrefix + ".*?\\${)", 'g');
-
-                if (dynamicRegex.test(combinedContent)) {
-                    isMaybeUsed = true;
-                    break;
+                // 1. Literal usage
+                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                
+                // Check for full key match
+                const literalRegex = new RegExp(`['"\`]${escapedKey}['"\`]`, 'g');
+                if (literalRegex.test(content)) {
+                    used.add(key);
+                    return;
                 }
-            }
 
-            if (isMaybeUsed) {
-                maybeUsed.add(key);
-            } else {
-                unused.push(key);
-            }
-        });
+                // Check for namespaced match if namespace exists
+                if (namespace && key.startsWith(namespace + '.')) {
+                    const relativeKey = key.substring(namespace.length + 1);
+                    const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const relativeRegex = new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g');
+                    if (relativeRegex.test(content)) {
+                        used.add(key);
+                        return;
+                    }
+                }
+
+                // 2. Dynamic usage
+                const parts = key.split('.');
+                let isMaybeUsed = false;
+
+                for (let i = 1; i < parts.length; i++) {
+                    const prefix = parts.slice(0, i).join('.') + '.';
+                    const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const dynamicRegex = new RegExp("(['\"`]" + escapedPrefix + "['\"`].*?[+])|(['\"`]" + escapedPrefix + ".*?\\${)", 'g');
+
+                    if (dynamicRegex.test(content)) {
+                        isMaybeUsed = true;
+                        break;
+                    }
+                }
+
+                if (isMaybeUsed) {
+                    maybeUsed.add(key);
+                }
+            });
+        }
+
+        const unused = allKeys.filter(key => !used.has(key) && !maybeUsed.has(key));
 
         return {
             unused: unused.sort(),
             maybeUsed: Array.from(maybeUsed).sort()
         };
+    }
+
+    /**
+     * Extracts the default namespace from useTranslation('ns') call.
+     */
+    extractNamespace(content) {
+        // Matches useTranslation('ns') or useTranslation(['ns', ...]) or useTranslations('ns')
+        const match = /\buseTranslations?\(\s*\[?\s*['"\`]([^'"`]+)['"\`]/.exec(content);
+        return match ? match[1] : null;
     }
 
     /**
@@ -104,32 +129,34 @@ class Scanner {
         // 2. i18n.t('key')
         // 3. i18nKey="key"
         // 4. <Trans i18nKey="key">
-        // 5. useTranslation(['namespace']) -> t('key')
         const patterns = [
-            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([a-zA-Z0-9._-]+)['"\`]/g
+            /(?:\bt\(|i18n\.t\(|i18nKey=)\s*['"\`]([a-zA-Z0-9._:-]+)['"\`]/g
         ];
 
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
             const lines = content.split('\n');
+            const namespace = this.extractNamespace(content);
 
             patterns.forEach(regex => {
                 let match;
-                // Reset regex state for each file
                 regex.lastIndex = 0;
                 while ((match = regex.exec(content)) !== null) {
-                    const key = match[1];
+                    let key = match[1];
                     
-                    // VALIDATION: Skip dynamic keys
-                    // 1. Skip if it contains template literal placeholders ${...}
-                    // 2. Skip if it's just the placeholder prefix ${
-                    // 3. Skip if it looks like a variable (no dots, no spaces, starts with lowercase and followed by camelCase etc) 
-                    //    - actually, dots are good, but ${ is the killer.
+                    // Normalize colon to dot for internal representation if it's a namespace separator
+                    // and not just part of a key.
+                    if (key.includes(':')) {
+                        key = key.replace(':', '.');
+                    } else if (namespace) {
+                        // Apply default namespace if no colon was present
+                        key = `${namespace}.${key}`;
+                    }
+                    
                     if (key.includes('${') || key.includes('`') || key.startsWith('$')) {
                         continue;
                     }
 
-                    // basic validation to avoid random strings and ensure it's not a translation file path
                     if (key && !existingKeysSet.has(key) && !key.includes('/') && !key.includes('\\')) {
                         if (includeContext) {
                             if (!missingKeysData[key]) {
@@ -139,10 +166,9 @@ class Scanner {
                                 };
                             }
                             
-                            // Find line number
                             const index = match.index;
                             const lineNo = content.substring(0, index).split('\n').length;
-                            const contextRange = 2; // lines before and after
+                            const contextRange = 2;
                             const startLine = Math.max(0, lineNo - contextRange - 1);
                             const endLine = Math.min(lines.length, lineNo + contextRange);
                             const contextLines = lines.slice(startLine, endLine);
@@ -172,38 +198,47 @@ class Scanner {
     async findContextForKeys(keys) {
         const files = await this.getFiles();
         const contextData = {};
-        const keysSet = new Set(keys);
 
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
             const lines = content.split('\n');
+            const namespace = this.extractNamespace(content);
 
             keys.forEach(key => {
                 const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`['"\`]${escapedKey}['"\`]`, 'g');
+                const regexes = [new RegExp(`['"\`]${escapedKey}['"\`]`, 'g')];
                 
-                let match;
-                while ((match = regex.exec(content)) !== null) {
-                    if (!contextData[key]) {
-                        contextData[key] = {
-                            key,
-                            occurrences: []
-                        };
-                    }
-
-                    const index = match.index;
-                    const lineNo = content.substring(0, index).split('\n').length;
-                    const contextRange = 2;
-                    const startLine = Math.max(0, lineNo - contextRange - 1);
-                    const endLine = Math.min(lines.length, lineNo + contextRange);
-                    const contextLines = lines.slice(startLine, endLine);
-
-                    contextData[key].occurrences.push({
-                        file: path.relative(this.targetDir, file),
-                        line: lineNo,
-                        context: contextLines.join('\n').trim()
-                    });
+                // Also check for relative key if it matches the current namespace
+                if (namespace && key.startsWith(namespace + '.')) {
+                    const relativeKey = key.substring(namespace.length + 1);
+                    const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    regexes.push(new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g'));
                 }
+
+                regexes.forEach(regex => {
+                    let match;
+                    while ((match = regex.exec(content)) !== null) {
+                        if (!contextData[key]) {
+                            contextData[key] = {
+                                key,
+                                occurrences: []
+                            };
+                        }
+
+                        const index = match.index;
+                        const lineNo = content.substring(0, index).split('\n').length;
+                        const contextRange = 2;
+                        const startLine = Math.max(0, lineNo - contextRange - 1);
+                        const endLine = Math.min(lines.length, lineNo + contextRange);
+                        const contextLines = lines.slice(startLine, endLine);
+
+                        contextData[key].occurrences.push({
+                            file: path.relative(this.targetDir, file),
+                            line: lineNo,
+                            context: contextLines.join('\n').trim()
+                        });
+                    }
+                });
             });
         }
 
