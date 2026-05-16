@@ -50,7 +50,7 @@ class Scanner {
 
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
-            const namespace = this.extractNamespace(content);
+            const namespaces = this.extractNamespace(content);
 
             allKeys.forEach(key => {
                 // If key is already marked as used, skip
@@ -66,14 +66,16 @@ class Scanner {
                     return;
                 }
 
-                // Check for namespaced match if namespace exists
-                if (namespace && key.startsWith(namespace + '.')) {
-                    const relativeKey = key.substring(namespace.length + 1);
-                    const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const relativeRegex = new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g');
-                    if (relativeRegex.test(content)) {
-                        used.add(key);
-                        return;
+                // Check for namespaced match if namespaces exist
+                for (const namespace of namespaces) {
+                    if (key.startsWith(namespace + '.')) {
+                        const relativeKey = key.substring(namespace.length + 1);
+                        const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const relativeRegex = new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g');
+                        if (relativeRegex.test(content)) {
+                            used.add(key);
+                            return;
+                        }
                     }
                 }
 
@@ -107,12 +109,30 @@ class Scanner {
     }
 
     /**
-     * Extracts the default namespace from useTranslation('ns') call.
+     * Extracts all namespaces from useTranslation('ns') or useTranslation(['ns1', 'ns2']) calls.
      */
     extractNamespace(content) {
-        // Matches useTranslation('ns') or useTranslation(['ns', ...]) or useTranslations('ns')
-        const match = /\buseTranslations?\(\s*\[?\s*['"\`]([^'"`]+)['"\`]/.exec(content);
-        return match ? match[1] : null;
+        const namespaces = new Set();
+        
+        // Match useTranslation('ns') or useTranslations('ns')
+        const singleRegex = /\buseTranslations?\(\s*['"\`]([^'"`]+)['"\`]/g;
+        let match;
+        while ((match = singleRegex.exec(content)) !== null) {
+            namespaces.add(match[1]);
+        }
+
+        // Match useTranslation(['ns1', 'ns2'])
+        const arrayRegex = /\buseTranslations?\(\s*\[([^\]]+)\]/g;
+        while ((match = arrayRegex.exec(content)) !== null) {
+            const nsArrayStr = match[1];
+            const nsRegex = /['"\`]([^'"`]+)['"\`]/g;
+            let nsMatch;
+            while ((nsMatch = nsRegex.exec(nsArrayStr)) !== null) {
+                namespaces.add(nsMatch[1]);
+            }
+        }
+
+        return Array.from(namespaces);
     }
 
     /**
@@ -136,7 +156,8 @@ class Scanner {
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
             const lines = content.split('\n');
-            const namespace = this.extractNamespace(content);
+            const namespaces = this.extractNamespace(content);
+            const defaultNamespace = namespaces.length > 0 ? namespaces[0] : null;
 
             patterns.forEach(regex => {
                 let match;
@@ -148,9 +169,9 @@ class Scanner {
                     // and not just part of a key.
                     if (key.includes(':')) {
                         key = key.replace(':', '.');
-                    } else if (namespace) {
+                    } else if (defaultNamespace) {
                         // Apply default namespace if no colon was present
-                        key = `${namespace}.${key}`;
+                        key = `${defaultNamespace}.${key}`;
                     }
                     
                     if (key.includes('${') || key.includes('`') || key.startsWith('$')) {
@@ -202,17 +223,19 @@ class Scanner {
         for (const file of files) {
             const content = await fs.readFile(file, 'utf-8');
             const lines = content.split('\n');
-            const namespace = this.extractNamespace(content);
+            const namespaces = this.extractNamespace(content);
 
             keys.forEach(key => {
                 const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const regexes = [new RegExp(`['"\`]${escapedKey}['"\`]`, 'g')];
                 
-                // Also check for relative key if it matches the current namespace
-                if (namespace && key.startsWith(namespace + '.')) {
-                    const relativeKey = key.substring(namespace.length + 1);
-                    const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    regexes.push(new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g'));
+                // Also check for relative key if it matches any of the namespaces
+                for (const namespace of namespaces) {
+                    if (key.startsWith(namespace + '.')) {
+                        const relativeKey = key.substring(namespace.length + 1);
+                        const escapedRelativeKey = relativeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        regexes.push(new RegExp(`['"\`]${escapedRelativeKey}['"\`]`, 'g'));
+                    }
                 }
 
                 regexes.forEach(regex => {
