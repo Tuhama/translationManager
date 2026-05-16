@@ -1,6 +1,6 @@
 {
   "name": "@tuhama/translation-manager",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "AI-powered i18n management with context-aware scanning and support for OpenAI, Gemini, and Google Translate.",
   "author": "Tuhama <tuhama.gh.qlyshi@gmail.com>",
   "license": "MIT",
