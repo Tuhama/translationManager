@@ -3,7 +3,7 @@
 This skill enables an AI agent to efficiently manage i18n translations using the `@tuhama/translation-manager` library.
 
 ## Context
-This project uses a custom translation manager that supports AI-powered context extraction. Translation keys are stored in JSON files (usually in `src/locales` or `locales`).
+This project uses a custom translation manager that supports AI-powered context extraction. Translation keys are stored in JSON files (either flat files in `src/locales` or `locales`, or grouped into directories when using namespaces).
 
 ## Workflow
 
@@ -13,17 +13,19 @@ Before starting any work, always check the current status:
 - **Goal**: Identify missing translations, unused keys, and coverage percentage across all languages.
 
 ### 2. Identify Missing Keys from Code
-Find keys that are used in the source code (e.g., `t('key.name')`) but aren't defined in the JSON files:
+Find keys that are used in the source code (e.g., `t('key.name')` or `t('namespace:key.name')`) but aren't defined in the JSON files:
 - **Action**: Use the `Scanner` or the Web UI to find "Missing from files" keys.
 - **AI Task**: If you find missing keys, suggest descriptive key names based on their usage.
 
 ### 3. Generate Context-Aware Translations
 When translating, leverage the extracted code context:
 - **Rule**: Use the surrounding code snippets to determine the correct nuance (e.g., is "Save" a button or a noun?).
+- **Export**: The system allows exporting keys with context as JSON to facilitate bulk AI translation. Use this for mass updates.
 - **Style**: Maintain consistent tone across the app (default: professional and concise).
 - **Placeholders**: Always preserve `{name}`, `{{count}}`, or other interpolation markers.
 
-### 4. Maintain Key Consistency
+### 4. Maintain Key Consistency & Namespaces
+- **Namespaces**: The library supports namespaces (e.g., `namespace:key`). Ensure you respect the configured storage mode, storing them either as flattened keys or separated into directory-based namespace files.
 - **Naming**: Use dot-notation for nesting (e.g., `auth.login.button_label`).
 - **Sorting**: Keys should be kept in alphabetical order. Use the "Normalize" feature or `npx @tuhama/translation-manager normalize` (if available).
 - **Cleanup**: Periodically check for unused keys and remove them to keep bundle sizes small.
