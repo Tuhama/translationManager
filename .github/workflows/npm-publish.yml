@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # needed for trusted publishing / provenance
+  id-token: write
 
 jobs:
   publish:
@@ -14,13 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        # version is read from the "packageManager" field in package.json.
+        # If you don't have that field, add: with: { version: 10 }
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
           registry-url: https://registry.npmjs.org
 
-      - run: npm ci
-      - run: npm test --if-present
-      - run: npm run build --if-present
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test --if-present
+      - run: pnpm build --if-present
 
-      - run: npm publish --provenance --access public
+      - run: pnpm publish --no-git-checks --access public
