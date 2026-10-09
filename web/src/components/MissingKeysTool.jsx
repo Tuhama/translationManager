@@ -19,7 +19,7 @@ const MissingKeysTool = ({ data, onSelectKey }) => {
         title={`${missingCount} keys used in source code but missing from translation files`}
       >
         <span>⚠️</span>
-        <span>{missingCount} Missing Keys</span>
+        <span className="btn-label">{missingCount} Missing Keys</span>
       </button>
 
       {showModal && (

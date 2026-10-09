@@ -69,15 +69,15 @@ const Header = ({
         <div className="header-actions">
           <MissingKeysTool data={data} onSelectKey={onSelectKey} />
 
-          <button className="header-primary-btn" onClick={onNewKey}>
+          <button className="header-primary-btn" onClick={onNewKey} title="New Key">
             <span className="btn-icon">➕</span>
-            New Key
+            <span className="btn-label">New Key</span>
           </button>
 
           <div className="dropdown-container">
-            <button className="header-btn dropdown-trigger">
+            <button className="header-btn dropdown-trigger" title="Tools">
               <span className="btn-icon">🛠️</span>
-              Tools
+              <span className="btn-label">Tools</span>
               <span className="dropdown-arrow">▼</span>
             </button>
             <div className="dropdown-menu">
@@ -112,7 +112,7 @@ const Header = ({
             title="Settings"
           >
             <span className="btn-icon">⚙️</span>
-            Settings
+            <span className="btn-label">Settings</span>
           </button>
         </div>
       </div>
