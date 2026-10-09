@@ -126,7 +126,7 @@ class TranslatorManager {
         if (type === 'ai' && key) {
             const scanner = new Scanner(this.targetDir, await this.storage.getLocalesDir(), this.config);
             const context = await scanner.findContextForKeys([key]);
-            return await translator.translate(text, targetLang, sourceLang, context);
+            return await translator.translate(text, targetLang, sourceLang, context, [key]);
         }
         
         return await translator.translate(text, targetLang, sourceLang);
@@ -136,7 +136,7 @@ class TranslatorManager {
      * Gets the configured translator instance.
      */
     async getTranslator() {
-        if (this.config.aiTranslate && this.config.aiTranslate.apiKey) {
+        if (AITranslator.isConfigured(this.config.aiTranslate)) {
             return {
                 translator: new AITranslator(this.config.aiTranslate),
                 type: 'ai'
@@ -154,7 +154,7 @@ class TranslatorManager {
             throw new Error('Google Translate API v2 is deprecated. Please update your configuration.');
         }
 
-        throw new Error('No translation service configured. Please add Google Translate or AI settings.');
+        throw new Error('No translation service configured. Add an AI provider (OpenAI, Gemini, Ollama, LM Studio, Groq, or a custom server) or Google Cloud Translate.');
     }
 
     /**
@@ -210,7 +210,7 @@ class TranslatorManager {
             const validKeys = validIndices.map(idx => keys[idx]);
 
             if (textsToTranslate.length > 0) {
-                const translatedTexts = await translator.translate(textsToTranslate, lang, sourceLang, context);
+                const translatedTexts = await translator.translate(textsToTranslate, lang, sourceLang, context, validKeys);
                 preview[lang] = {};
                 validKeys.forEach((key, idx) => {
                     preview[lang][key] = translatedTexts[idx];
@@ -413,10 +413,37 @@ class TranslatorManager {
     }
 
     /**
-     * Saves the current configuration to the config file.
+     * Config safe to send to the browser. API keys stay on disk.
      */
+    toPublicConfig() {
+        const clone = JSON.parse(JSON.stringify(this.config || {}));
+        if (clone.aiTranslate) {
+            clone.aiTranslate.hasApiKey = Boolean(AITranslator.resolveApiKey(this.config.aiTranslate));
+            clone.aiTranslate.hasSavedApiKey = Boolean(this.config.aiTranslate?.apiKey);
+            delete clone.aiTranslate.apiKey;
+            delete clone.aiTranslate.clearApiKey;
+        }
+        return clone;
+    }
+
     async saveConfig(newConfig) {
-        this.config = { ...this.config, ...newConfig };
+        const merged = { ...this.config, ...newConfig };
+
+        if (newConfig.aiTranslate) {
+            const incoming = { ...newConfig.aiTranslate };
+            const clearApiKey = Boolean(incoming.clearApiKey);
+            delete incoming.clearApiKey;
+
+            if (clearApiKey) {
+                incoming.apiKey = '';
+            } else if (!incoming.apiKey) {
+                incoming.apiKey = this.config.aiTranslate?.apiKey || '';
+            }
+
+            merged.aiTranslate = incoming;
+        }
+
+        this.config = merged;
         // Sync storage config if path changed
         this.storage.config = this.config;
         const configPath = path.resolve(this.targetDir, 'translation.config.json');

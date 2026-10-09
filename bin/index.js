@@ -4,24 +4,30 @@ const { program } = require('commander');
 const path = require('path');
 const fs = require('fs-extra');
 const { startServer } = require('../src/server');
+const pkg = require('../package.json');
 const open = (...args) => import('open').then(m => m.default(...args));
 
 program
-    .version('0.1.0')
+    .version(pkg.version)
     .description('Translation Manager CLI - Manage your React translations with a modern UI')
     .option('-p, --port <number>', 'Port to run the UI on', 3000)
+    .option('--host <host>', 'Host to bind. Defaults to 127.0.0.1 so API keys stay on this machine.', '127.0.0.1')
     .option('-c, --config <path>', 'Path to config file')
     .action(async (options) => {
         const targetDir = process.cwd();
         let config = await loadConfig(targetDir, options.config);
 
         console.log('\x1b[36mℹ\x1b[0m Starting Translation Manager...');
+
+        if (options.host !== '127.0.0.1' && options.host !== 'localhost' && options.host !== '::1') {
+            console.warn('\x1b[33m!\x1b[0m Binding beyond loopback exposes translation files and saved API keys to the network.');
+        }
         
         try {
-            startServer(targetDir, options.port, config);
-            
-            // Open the browser
-            await open(`http://localhost:${options.port}`);
+            await startServer(targetDir, options.port, config, options.host);
+
+            const browseHost = options.host === '0.0.0.0' || options.host === '::' ? '127.0.0.1' : options.host;
+            await open(`http://${browseHost}:${options.port}`);
         } catch (err) {
             console.error('\x1b[31m✖\x1b[0m Error:', err.message);
             process.exit(1);

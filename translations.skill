@@ -23,11 +23,12 @@ When translating, leverage the extracted code context:
 - **Export**: The system allows exporting keys with context as JSON to facilitate bulk AI translation. Use this for mass updates.
 - **Style**: Maintain consistent tone across the app (default: professional and concise).
 - **Placeholders**: Always preserve `{name}`, `{{count}}`, or other interpolation markers.
+- **Providers**: Translation can use OpenAI, Gemini, Groq, Ollama, LM Studio, or any OpenAI-compatible server configured in `translation.config.json`. Ollama and LM Studio are local and do not need an API key. Never commit API keys. The server binds to `127.0.0.1` and does not return saved keys to the browser.
 
 ### 4. Maintain Key Consistency & Namespaces
 - **Namespaces**: The library supports namespaces (e.g., `namespace:key`). Ensure you respect the configured storage mode, storing them either as flattened keys or separated into directory-based namespace files.
 - **Naming**: Use dot-notation for nesting (e.g., `auth.login.button_label`).
-- **Sorting**: Keys should be kept in alphabetical order. Use the "Normalize" feature or `npx @tuhama/translation-manager normalize` (if available).
+- **Sorting**: Keys should be kept in alphabetical order. Use the Normalize action in the Web UI (`POST /api/normalize`). There is no `normalize` CLI command.
 - **Cleanup**: Periodically check for unused keys and remove them to keep bundle sizes small.
 
 ## AI Guidelines for this Repo

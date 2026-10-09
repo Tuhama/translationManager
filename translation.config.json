@@ -1,6 +1,13 @@
 {
-  "path": "src/locales",
+  "path": "public/locales",
   "googleTranslate": {
-    "projectId": ""
+    "projectId": "",
+    "keyFilename": ""
+  },
+  "aiTranslate": {
+    "provider": "lmstudio",
+    "apiKey": "",
+    "model": "google/gemma-4-e4b",
+    "baseUrl": ""
   }
 }

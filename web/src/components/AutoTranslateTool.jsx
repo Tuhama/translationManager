@@ -22,8 +22,8 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
         setError(null);
         try {
             const response = await fetch(`/api/bulk-translate/scan?sourceLang=${sourceLang}`);
-            if (!response.ok) throw new Error('API Key missing or invalid. Check settings.');
             const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to scan missing translations.');
             setReport(data);
         } catch (error) {
             setError(error.message);

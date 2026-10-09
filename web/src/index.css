@@ -1150,6 +1150,14 @@ body {
   letter-spacing: 2px;
 }
 
+.settings-input-plain {
+  letter-spacing: normal;
+}
+
+.settings-key-action {
+  margin-bottom: 16px;
+}
+
 .settings-select {
   width: 100%;
   padding: 10px 14px;

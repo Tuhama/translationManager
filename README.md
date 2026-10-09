@@ -8,7 +8,7 @@ A modern, web-based interface for managing i18n translation files in React and o
 ## Features
 
 - **Modern UI**: Dark mode, glassmorphism, and smooth animations.
-- **AI-Powered Translation**: Support for **OpenAI (GPT-4o)**, **Google Gemini**, and Google Cloud Translate.
+- **AI-Powered Translation**: OpenAI, Google Gemini, Groq’s free tier, local Ollama and LM Studio, any OpenAI-compatible server, and Google Cloud Translate.
 - **Context-Aware Scanning**: Extracts code snippets where translation keys are used, providing crucial context for AI translations.
 - **Missing Keys Detection**: Identifies translation keys used in source code but missing from files.
 - **Cleanup Tool**: Detects and batch-removes unused translation keys.
@@ -77,7 +77,9 @@ Configure Google Cloud, OpenAI, or Gemini in the settings to enable auto-transla
 
 You can optionally create a `translation.config.json` in your project root:
 
-### Using OpenAI (Recommended for AI Quality)
+The UI listens on `127.0.0.1` only. Pass `--host` if you intentionally want another interface. API keys saved in settings are written to `translation.config.json` and are not returned to the browser. Prefer `TRANSLATION_MANAGER_API_KEY` in the environment, and do not commit a file that contains a real key.
+
+### Using OpenAI
 
 ```json
 {
@@ -89,6 +91,36 @@ You can optionally create a `translation.config.json` in your project root:
   }
 }
 ```
+
+### Using Gemini
+
+```json
+{
+  "path": "src/locales",
+  "aiTranslate": {
+    "provider": "gemini",
+    "apiKey": "your-gemini-api-key",
+    "model": "gemini-3.8-flash"
+  }
+}
+```
+
+### Using a local or free model
+
+Ollama and LM Studio run on your machine and do not need an API key. Groq has a free developer tier. Any other OpenAI-compatible server can be set as `custom`.
+
+```json
+{
+  "path": "src/locales",
+  "aiTranslate": {
+    "provider": "ollama",
+    "model": "llama3.2",
+    "baseUrl": "http://127.0.0.1:11434/v1"
+  }
+}
+```
+
+`provider` may be `openai`, `gemini`, `ollama`, `lmstudio`, `groq`, or `custom`. Leave `model` or `baseUrl` empty to use that provider’s default.
 
 ### Using Google Cloud Translate
 

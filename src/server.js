@@ -1,19 +1,19 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const history = require('express-history-api-fallback');
 const TranslatorManager = require('./core/TranslatorManager');
+const AITranslator = require('./core/services/AITranslator');
 const pkg = require('../package.json');
 
 /**
  * Starts the translation manager server.
+ * Binds to loopback by default so locale files and API keys are not exposed on the network.
  */
-function startServer(targetDir, port = 3000, config = {}) {
+function startServer(targetDir, port = 3000, config = {}, host = '127.0.0.1') {
     const app = express();
     const manager = new TranslatorManager(targetDir, config);
 
-    app.use(cors());
-    app.use(express.json());
+    app.use(express.json({ limit: '2mb' }));
 
     // API endpoints
     app.get('/api/translations', async (req, res, next) => {
@@ -66,12 +66,12 @@ function startServer(targetDir, port = 3000, config = {}) {
     });
 
     const checkConfig = (res) => {
-        const hasAI = manager.config.aiTranslate && manager.config.aiTranslate.apiKey;
+        const hasAI = AITranslator.isConfigured(manager.config.aiTranslate);
         const hasGoogle = manager.config.googleTranslate && manager.config.googleTranslate.projectId;
 
         if (!hasAI && !hasGoogle) {
             res.status(400).json({ 
-                error: 'No translation service configured. Please add OpenAI, Gemini, or Google Translate settings.',
+                error: 'No translation service configured. Add OpenAI, Gemini, Ollama, LM Studio, Groq, a custom server, or Google Cloud Translate.',
                 configurationRequired: true
             });
             return false;
@@ -161,14 +161,14 @@ function startServer(targetDir, port = 3000, config = {}) {
     });
 
     app.get('/api/config', (req, res) => {
-        res.json(manager.config);
+        res.json(manager.toPublicConfig());
     });
 
     app.post('/api/settings', async (req, res, next) => {
         try {
             const { settings } = req.body;
             await manager.saveConfig(settings);
-            res.json({ success: true, config: manager.config });
+            res.json({ success: true, config: manager.toPublicConfig() });
         } catch (err) {
             next(err);
         }
@@ -186,7 +186,9 @@ function startServer(targetDir, port = 3000, config = {}) {
         // Check for specific error types
         const isConfigError = err.message.includes('not configured') || 
                             err.message.includes('API Key is required') ||
-                            err.message.includes('Project ID is required');
+                            err.message.includes('Project ID is required') ||
+                            err.message.includes('model name is required') ||
+                            err.message.includes('base URL is required');
 
         res.status(isConfigError ? 400 : 500).json({
             error: err.message,
@@ -194,8 +196,13 @@ function startServer(targetDir, port = 3000, config = {}) {
         });
     });
 
-    app.listen(port, () => {
-        console.log(`\x1b[32m✔\x1b[0m Translation Manager v${pkg.version} is running at http://localhost:${port}`);
+    return new Promise((resolve, reject) => {
+        const server = app.listen(port, host, () => {
+            const shownHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
+            console.log(`\x1b[32m✔\x1b[0m Translation Manager v${pkg.version} is running at http://${shownHost}:${port}`);
+            resolve(server);
+        });
+        server.on('error', reject);
     });
 }
 
