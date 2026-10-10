@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getNestedValue } from '../utils/objectUtils';
 import { Button, FormGroup, Input, Textarea, Alert } from './ui';
+import TranslationService from '../services/api';
 
 /**
  * Handles editing and creating translation entries.
@@ -74,13 +75,7 @@ const Editor = ({
     setTranslatingLang(targetLang);
     setError(null);
     try {
-      const response = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, targetLang, sourceLang, key: selectedKey })
-      });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      const data = await TranslationService.translate(text, targetLang, sourceLang, selectedKey);
       setFormData(prev => ({ ...prev, [targetLang]: data.translatedText }));
     } catch (error) {
       setError(`Translation failed: ${error.message}`);
@@ -105,13 +100,7 @@ const Editor = ({
         const newFormData = { ...formData };
 
         for (const targetLang of targets) {
-            const response = await fetch('/api/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, targetLang, sourceLang, key: selectedKey })
-            });
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            const data = await TranslationService.translate(text, targetLang, sourceLang, selectedKey);
             if (data.translatedText) {
                 newFormData[targetLang] = data.translatedText;
             }

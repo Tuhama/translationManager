@@ -25,7 +25,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev-server\" \"npm run dev-web\"",
     "dev-server": "nodemon bin/index.js",
-    "dev-web": "cd web && npm build && npm run dev",
+    "dev-web": "cd web && npm run dev",
     "build": "cd web && npm run build",
     "start": "node bin/index.js",
     "test": "vitest run",

@@ -145,6 +145,7 @@ function App() {
       {showAddLanguage && (
         <AddLanguageTool
           languages={data.languages}
+          layout={data.layout}
           onUpdate={actions.refresh}
           onClose={() => setShowAddLanguage(false)}
         />

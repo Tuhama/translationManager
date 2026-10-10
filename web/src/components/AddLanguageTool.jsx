@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Button, Alert } from './ui';
+import TranslationService from '../services/api';
+import { defaultSourceLang } from '../utils/languageUtils';
 
 const COMMON_LANGUAGES = [
     ['ar', 'Arabic'],
@@ -35,12 +37,12 @@ const COMMON_LANGUAGES = [
 /**
  * One-click new language: pick a code and translate every key from a source locale.
  */
-const AddLanguageTool = ({ languages = [], onUpdate, onClose }) => {
+const AddLanguageTool = ({ languages = [], layout = 'flat', onUpdate, onClose }) => {
     const existing = useMemo(
         () => new Set(languages.map(lang => lang.toLowerCase())),
         [languages]
     );
-    const defaultSource = languages.includes('en') ? 'en' : (languages[0] || 'en');
+    const defaultSource = defaultSourceLang(languages);
     const firstAvailable = COMMON_LANGUAGES.find(([code]) => !existing.has(code.toLowerCase()));
 
     const [sourceLang, setSourceLang] = useState(defaultSource);
@@ -55,15 +57,7 @@ const AddLanguageTool = ({ languages = [], onUpdate, onClose }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/languages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetLang: resolvedCode, sourceLang })
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to add language.');
-            }
+            await TranslationService.addLanguage(resolvedCode, sourceLang);
             onUpdate();
             onClose();
         } catch (err) {
@@ -144,7 +138,9 @@ const AddLanguageTool = ({ languages = [], onUpdate, onClose }) => {
                     ))}
                 </select>
                 <p className="hint">
-                    Creates <strong>{resolvedCode || '…'}.json</strong> and translates every string from <strong>{sourceLang}</strong> in one step.
+                    {layout === 'namespace'
+                        ? <>Creates a <strong>{resolvedCode || '…'}/</strong> folder that matches your existing namespace files and translates every string from <strong>{sourceLang}</strong>.</>
+                        : <>Creates <strong>{resolvedCode || '…'}.json</strong> and translates every string from <strong>{sourceLang}</strong> in one step.</>}
                 </p>
             </div>
         </Modal>

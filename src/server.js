@@ -140,11 +140,10 @@ function startServer(targetDir, port = 3000, config = {}, host = '127.0.0.1') {
         try {
             const exportResult = await manager.exportMissingFromFiles();
 
-            // Set headers for file download
             res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Content-Disposition', `attachment; filename="missing-keys-from-code-${new Date().toISOString().split('T')[0]}.json"`);
+            res.setHeader('Content-Disposition', `attachment; filename="missing-keys-${new Date().toISOString().split('T')[0]}.json"`);
 
-            res.json(exportResult.exportData);
+            res.json(exportResult);
         } catch (err) {
             next(err);
         }

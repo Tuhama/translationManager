@@ -64,14 +64,26 @@ class AITranslator {
         return config.apiKey || process.env.TRANSLATION_MANAGER_API_KEY || '';
     }
 
+    static listProviders() {
+        return Object.entries(AITranslator.PROVIDERS).map(([id, meta]) => ({
+            id,
+            label: meta.label,
+            requiresApiKey: meta.requiresApiKey,
+            allowsBaseUrl: meta.allowsBaseUrl,
+            defaultModel: meta.defaultModel,
+            defaultBaseUrl: meta.defaultBaseUrl,
+            help: meta.help
+        }));
+    }
+
     static isConfigured(config) {
         if (!config || typeof config !== 'object') return false;
-        const provider = AITranslator.normalizeProvider(config.provider || 'openai');
-        const meta = AITranslator.PROVIDERS[provider];
-        if (!meta) return false;
-        if (provider === 'custom' && !config.baseUrl) return false;
-        if (meta.requiresApiKey && !AITranslator.resolveApiKey(config)) return false;
-        return true;
+        try {
+            new AITranslator(config);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     static normalizeProvider(provider) {

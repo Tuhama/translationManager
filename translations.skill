@@ -21,7 +21,7 @@ Find keys that are used in the source code (e.g., `t('key.name')` or `t('namespa
 Do not copy locale JSON by hand. Create the language and translate every source string in one call:
 - **UI**: Tools → Add Language. Pick a common code or enter a custom one (`de`, `pt-BR`).
 - **API**: `POST /api/languages` with `{ "targetLang": "de", "sourceLang": "en" }`.
-- **Rules**: Codes must match `xx` or `xx-YY`. The source language must already exist. The target must not already exist. A translator must be configured (AI or Google Cloud). Empty source strings stay empty. Nested objects are preserved.
+- **Rules**: Codes such as `de`, `DE`, or `pt-BR` are accepted and normalized. The source language must already exist. The target must not already exist. A translator must be constructible (AI with the required model/key/URL, or Google Cloud). Incomplete AI settings fall through to Google Cloud when configured. Empty source strings stay empty. Nested objects and namespace folders are copied from the source locale.
 - **Response**: `{ "language": "de", "translated": 42, "sourceLang": "en" }`.
 
 ### 4. Generate Context-Aware Translations
@@ -32,7 +32,7 @@ When translating, leverage the extracted code context:
   1. `GET /api/bulk-translate/scan?sourceLang=en` to count gaps.
   2. `POST /api/bulk-translate/execute` with `{ "sourceLang": "en" }` to get a review preview.
   3. `POST /api/bulk-save` with `{ "data": preview, "format": true }` after review.
-- **Export**: Export keys with context as JSON (`GET /api/export-missing` or `/api/export-missing/preview`) for mass updates outside the UI. Import with `POST /api/import-translations`.
+- **Export**: `GET /api/export-missing` and `/api/export-missing/preview` both return `{ exportData, context, metadata }`. Import that file with `POST /api/import-translations` (`data` may be the wrapper or the inner `exportData`).
 - **Style**: Maintain consistent tone across the app (default: professional and concise).
 - **Placeholders**: Always preserve `{name}`, `{{count}}`, or other interpolation markers.
 - **Providers**: Translation can use OpenAI, Gemini, Groq, Ollama, LM Studio, or any OpenAI-compatible server configured in `translation.config.json`. Ollama and LM Studio are local and do not need an API key. Never commit API keys. The server binds to `127.0.0.1` and does not return saved keys to the browser.

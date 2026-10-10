@@ -19,6 +19,7 @@ describe('Header Component', () => {
     onShowSettings: vi.fn(),
     onShowAutoTranslate: vi.fn(),
     onShowExportImport: vi.fn(),
+    onShowAddLanguage: vi.fn(),
     onSelectKey: vi.fn(),
     data: {}
   };
@@ -51,6 +52,12 @@ describe('Header Component', () => {
     render(<Header {...defaultProps} />);
     expect(screen.getByTestId('cleanup-tool')).toBeInTheDocument();
     expect(screen.getByTestId('missing-keys-tool')).toBeInTheDocument();
+  });
+
+  it('calls onShowAddLanguage when Add Language is clicked in Tools dropdown', () => {
+    render(<Header {...defaultProps} />);
+    fireEvent.click(screen.getByText('Add Language'));
+    expect(defaultProps.onShowAddLanguage).toHaveBeenCalled();
   });
 
   it('calls onShowAutoTranslate when Auto-Translate is clicked in Tools dropdown', () => {

@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert } from './ui';
+import TranslationService from '../services/api';
+import { defaultSourceLang } from '../utils/languageUtils';
 
 /**
  * Bulk Translate Tool with Scan and Review functionality.
  */
 const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
-    const [sourceLang, setSourceLang] = useState('en');
+    const [sourceLang, setSourceLang] = useState(() => defaultSourceLang(languages));
     const [report, setReport] = useState(null);
     const [preview, setPreview] = useState(null);
     const [loading, setLoading] = useState(false);
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState(null);
 
-    // Scan for missing keys on mount and when sourceLang changes
     useEffect(() => {
+        if (!languages.length) return;
+        if (!languages.includes(sourceLang)) {
+            setSourceLang(defaultSourceLang(languages));
+            return;
+        }
         handleScan();
-    }, [sourceLang]);
+    }, [sourceLang, languages]);
 
     const handleScan = async () => {
         setScanning(true);
         setError(null);
         try {
-            const response = await fetch(`/api/bulk-translate/scan?sourceLang=${sourceLang}`);
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Failed to scan missing translations.');
-            setReport(data);
+            setReport(await TranslationService.scanBulkTranslate(sourceLang));
         } catch (error) {
             setError(error.message);
         } finally {
@@ -36,17 +39,7 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/bulk-translate/execute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sourceLang })
-            });
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Translation failed.');
-            }
-            const data = await response.json();
-            setPreview(data);
+            setPreview(await TranslationService.executeBulkTranslate(sourceLang));
         } catch (error) {
             setError(error.message);
         } finally {
@@ -76,18 +69,9 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
                 onUpdate();
                 onClose();
             } else {
-                // Fallback to direct API call
-                const response = await fetch('/api/bulk-save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: preview, format })
-                });
-                if (response.ok) {
-                    onUpdate();
-                    onClose();
-                } else {
-                    throw new Error('Failed to save translations.');
-                }
+                await TranslationService.saveBulkTranslations(preview, format);
+                onUpdate();
+                onClose();
             }
         } catch (error) {
             setError(error.message);

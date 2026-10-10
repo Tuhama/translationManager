@@ -18,9 +18,14 @@ describe('Settings Component', () => {
   it('allows selecting AI provider', async () => {
     // Mock fetch for config
     global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
       json: () => Promise.resolve({
         aiTranslate: { provider: 'openai' },
-        googleTranslate: {}
+        googleTranslate: {},
+        aiProviders: [
+          { id: 'openai', label: 'OpenAI', requiresApiKey: true, allowsBaseUrl: false, defaultModel: 'gpt-4o', help: 'OpenAI' },
+          { id: 'gemini', label: 'Google Gemini', requiresApiKey: true, allowsBaseUrl: false, defaultModel: 'gemini-3.8-flash', help: 'Gemini' }
+        ]
       })
     });
 

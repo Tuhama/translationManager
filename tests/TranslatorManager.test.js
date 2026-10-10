@@ -75,6 +75,46 @@ describe('TranslatorManager', () => {
 
         await expect(manager.addLanguage('de', 'en')).rejects.toThrow(/already exists/);
         await expect(manager.addLanguage('not a lang', 'en')).rejects.toThrow(/language code/i);
+        expect(TranslatorManager.normalizeLanguageCode('DE')).toBe('de');
+        expect(TranslatorManager.normalizeLanguageCode('pt-br')).toBe('pt-BR');
+    });
+
+    it('adds a namespaced language by mirroring the source folder layout', async () => {
+        const enDir = path.join(localesDir, 'en');
+        const authDir = path.join(enDir, 'auth');
+        await fs.ensureDir(authDir);
+        await fs.writeJson(path.join(enDir, 'common.json'), { hello: 'Hello' });
+        await fs.writeJson(path.join(authDir, 'errors.json'), { missing: 'Missing' });
+
+        const manager = new TranslatorManager(testDir);
+        manager.getTranslator = async () => ({
+            type: 'google',
+            translator: {
+                translate: async (texts, targetLang) => texts.map(text => `${text}-${targetLang}`)
+            }
+        });
+
+        const result = await manager.addLanguage('DE', 'en');
+        expect(result.language).toBe('de');
+        expect(result.translated).toBe(2);
+
+        expect(await fs.pathExists(path.join(localesDir, 'de.json'))).toBe(false);
+        const common = await fs.readJson(path.join(localesDir, 'de', 'common.json'));
+        const errors = await fs.readJson(path.join(localesDir, 'de', 'auth', 'errors.json'));
+        expect(common.hello).toBe('Hello-de');
+        expect(errors.missing).toBe('Missing-de');
+        expect((await manager.scan()).layout).toBe('namespace');
+    });
+
+    it('does not treat incomplete AI settings as configured so Google can be used', async () => {
+        const AITranslator = require('../src/core/services/AITranslator');
+        const manager = new TranslatorManager(testDir, {
+            aiTranslate: { provider: 'lmstudio' },
+            googleTranslate: { projectId: 'demo-project' }
+        });
+
+        expect(AITranslator.isConfigured(manager.config.aiTranslate)).toBe(false);
+        expect(manager.config.googleTranslate.projectId).toBe('demo-project');
     });
 
     it('should export missing translations with context', async () => {
@@ -110,6 +150,15 @@ describe('TranslatorManager', () => {
         expect(es.new.key).toBe('Nuevo');
         expect(es.hello).toBe('Hola'); // Not updated
         expect(stats.imported).toBe(2); // en:new.key and es:new.key
+
+        const wrapped = await manager.importTranslations({
+            exportData: { 'wrapped.key': { en: 'Wrapped', es: 'Envuelto' } },
+            context: {},
+            metadata: { aiFriendly: true }
+        });
+        const en = await fs.readJson(path.join(localesDir, 'en.json'));
+        expect(en.wrapped.key).toBe('Wrapped');
+        expect(wrapped.imported).toBe(2);
     });
 
     it('passes code context and the translation key into AI translation', async () => {
@@ -235,5 +284,10 @@ describe('AITranslator', () => {
 
         expect(() => new AITranslator({ provider: 'custom', model: 'local' })).toThrow(/base URL/);
         expect(() => new AITranslator({ provider: 'lmstudio' })).toThrow(/model name/);
+        expect(AITranslator.isConfigured({ provider: 'lmstudio' })).toBe(false);
+        expect(AITranslator.isConfigured({ provider: 'lmstudio', model: 'local-model' })).toBe(true);
+        expect(AITranslator.listProviders().map(item => item.id)).toEqual([
+            'openai', 'gemini', 'ollama', 'lmstudio', 'groq', 'custom'
+        ]);
     });
 });

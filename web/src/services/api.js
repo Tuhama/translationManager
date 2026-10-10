@@ -2,113 +2,108 @@
  * Service for translation API calls.
  */
 class TranslationService {
-  /**
-   * Fetches translation data.
-   */
-  static async fetchTranslations() {
-    const res = await fetch('/api/translations');
+  static async request(url, options = {}) {
+    const res = await fetch(url, options);
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to fetch translations');
+      throw new Error(data.error || options.errorMessage || 'Request failed');
     }
-    return await res.json();
+    return data;
   }
 
-  /**
-   * Saves a translation.
-   */
+  static async fetchTranslations() {
+    return TranslationService.request('/api/translations', { errorMessage: 'Failed to fetch translations' });
+  }
+
   static async saveTranslation(key, values, format = true) {
-    const res = await fetch('/api/translations', {
+    return TranslationService.request('/api/translations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, values, format })
+      body: JSON.stringify({ key, values, format }),
+      errorMessage: 'Save failed'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Save failed');
-    }
-    return await res.json();
   }
 
-  /**
-   * Deletes a translation.
-   */
   static async deleteTranslation(key) {
-    const res = await fetch('/api/translations', {
+    return TranslationService.request('/api/translations', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key })
+      body: JSON.stringify({ key }),
+      errorMessage: 'Delete failed'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Delete failed');
-    }
-    return await res.json();
   }
 
-  /**
-   * Deletes multiple translations.
-   */
   static async deleteMultiple(keys) {
-    const res = await fetch('/api/delete-keys', {
+    return TranslationService.request('/api/delete-keys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keys })
+      body: JSON.stringify({ keys }),
+      errorMessage: 'Batch delete failed'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Batch delete failed');
-    }
-    return await res.json();
   }
 
-  /**
-   * Saves bulk translations.
-   */
-  /**
-   * Creates a locale file and translates every string from the source language.
-   */
   static async addLanguage(targetLang, sourceLang) {
-    const res = await fetch('/api/languages', {
+    return TranslationService.request('/api/languages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetLang, sourceLang })
+      body: JSON.stringify({ targetLang, sourceLang }),
+      errorMessage: 'Failed to add language'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to add language');
-    }
-    return await res.json();
   }
 
   static async saveBulkTranslations(data, format = true) {
-    const res = await fetch('/api/bulk-save', {
+    return TranslationService.request('/api/bulk-save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data, format })
+      body: JSON.stringify({ data, format }),
+      errorMessage: 'Bulk save failed'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Bulk save failed');
-    }
-    return await res.json();
   }
 
-  /**
-   * Normalizes translation files.
-   */
   static async normalize() {
-    const res = await fetch('/api/normalize', { method: 'POST' });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Normalization failed');
-    }
-    return await res.json();
+    return TranslationService.request('/api/normalize', {
+      method: 'POST',
+      errorMessage: 'Normalization failed'
+    });
   }
 
-  /**
-   * Exports all translation keys for all languages
-   */
+  static async translate(text, targetLang, sourceLang, key) {
+    return TranslationService.request('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, targetLang, sourceLang, key }),
+      errorMessage: 'Translation failed'
+    });
+  }
+
+  static async scanBulkTranslate(sourceLang) {
+    return TranslationService.request(`/api/bulk-translate/scan?sourceLang=${encodeURIComponent(sourceLang)}`, {
+      errorMessage: 'Failed to scan missing translations.'
+    });
+  }
+
+  static async executeBulkTranslate(sourceLang) {
+    return TranslationService.request('/api/bulk-translate/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceLang }),
+      errorMessage: 'Translation failed.'
+    });
+  }
+
+  static async getConfig() {
+    return TranslationService.request('/api/config', { errorMessage: 'Failed to fetch config' });
+  }
+
+  static async saveSettings(settings) {
+    return TranslationService.request('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings }),
+      errorMessage: 'Failed to save settings'
+    });
+  }
+
   static async exportMissingKeys() {
     const res = await fetch('/api/export-missing');
     if (!res.ok) {
@@ -116,7 +111,6 @@ class TranslationService {
       throw new Error(errorData.error || 'Export failed');
     }
 
-    // Trigger download
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -130,32 +124,19 @@ class TranslationService {
     return true;
   }
 
-  /**
-   * Gets preview of all translations export
-   */
   static async getExportPreview() {
-    const res = await fetch('/api/export-missing/preview');
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to get export preview');
-    }
-    return await res.json();
+    return TranslationService.request('/api/export-missing/preview', {
+      errorMessage: 'Failed to get export preview'
+    });
   }
 
-  /**
-   * Imports translated keys
-   */
   static async importTranslations(data, options = {}) {
-    const res = await fetch('/api/import-translations', {
+    return TranslationService.request('/api/import-translations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data, options })
+      body: JSON.stringify({ data, options }),
+      errorMessage: 'Import failed'
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Import failed');
-    }
-    return await res.json();
   }
 }
 

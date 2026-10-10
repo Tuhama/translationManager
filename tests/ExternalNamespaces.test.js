@@ -87,6 +87,25 @@ describe('Storage External Namespaces', () => {
             const fileContent = await fs.readJson(path.join(localesDir, 'en.json'));
             expect(fileContent.save).toBe('Save');
         });
+
+        it('should create a new language as namespaces when mirroring a folder locale', async () => {
+            const enDir = path.join(localesDir, 'en');
+            const nestedDir = path.join(enDir, 'auth');
+            await fs.ensureDir(nestedDir);
+            await fs.writeJson(path.join(enDir, 'common.json'), { save: 'Save' });
+            await fs.writeJson(path.join(nestedDir, 'errors.json'), { missing: 'Missing' });
+
+            const storage = new Storage(testDir);
+            await storage.write('de', {
+                common: { save: 'Speichern' },
+                auth: { errors: { missing: 'Fehlt' } }
+            }, { mirrorLang: 'en' });
+
+            expect(await fs.pathExists(path.join(localesDir, 'de.json'))).toBe(false);
+            expect(await fs.readJson(path.join(localesDir, 'de', 'common.json'))).toEqual({ save: 'Speichern' });
+            expect(await fs.readJson(path.join(localesDir, 'de', 'auth', 'errors.json'))).toEqual({ missing: 'Fehlt' });
+            expect(await storage.usesNamespaceLayout()).toBe(true);
+        });
     });
 
     describe('Edge cases', () => {

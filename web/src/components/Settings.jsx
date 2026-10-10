@@ -1,60 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, FormGroup, Input, Alert } from './ui';
-
-const AI_PROVIDERS = [
-    {
-        id: 'openai',
-        label: 'OpenAI',
-        requiresApiKey: true,
-        allowsBaseUrl: false,
-        defaultModel: 'gpt-4o',
-        help: 'Paid OpenAI API. Leave the key blank to keep the one already saved on this machine.'
-    },
-    {
-        id: 'gemini',
-        label: 'Google Gemini',
-        requiresApiKey: true,
-        allowsBaseUrl: false,
-        defaultModel: 'gemini-3.8-flash',
-        help: 'Google AI Studio key. Default model is gemini-3.8-flash.'
-    },
-    {
-        id: 'ollama',
-        label: 'Ollama (local, free)',
-        requiresApiKey: false,
-        allowsBaseUrl: true,
-        defaultModel: 'llama3.2',
-        defaultBaseUrl: 'http://127.0.0.1:11434/v1',
-        help: 'Free local model. Run ollama serve, then ollama pull llama3.2. No API key. Text stays on this computer unless you change the base URL.'
-    },
-    {
-        id: 'lmstudio',
-        label: 'LM Studio (local, free)',
-        requiresApiKey: false,
-        allowsBaseUrl: true,
-        defaultModel: '',
-        defaultBaseUrl: 'http://127.0.0.1:1234/v1',
-        help: 'Free local model. Start the LM Studio server and enter the model id from its server tab.'
-    },
-    {
-        id: 'groq',
-        label: 'Groq (free tier)',
-        requiresApiKey: true,
-        allowsBaseUrl: true,
-        defaultModel: 'openai/gpt-oss-20b',
-        defaultBaseUrl: 'https://api.groq.com/openai/v1',
-        help: 'Free developer key from console.groq.com. Requests go to Groq’s OpenAI-compatible API.'
-    },
-    {
-        id: 'custom',
-        label: 'Other OpenAI-compatible server',
-        requiresApiKey: false,
-        allowsBaseUrl: true,
-        defaultModel: '',
-        defaultBaseUrl: '',
-        help: 'llama.cpp, OpenRouter, or any other OpenAI-compatible endpoint. Set the base URL and model. Add a key only if that server requires one.'
-    }
-];
+import TranslationService from '../services/api';
 
 /**
  * Settings modal for managing configuration like API keys.
@@ -70,16 +16,23 @@ const Settings = ({ onClose }) => {
     const [hasSavedApiKey, setHasSavedApiKey] = useState(false);
     const [clearApiKey, setClearApiKey] = useState(false);
     const [localesPath, setLocalesPath] = useState('');
+    const [providers, setProviders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
-    const provider = AI_PROVIDERS.find(item => item.id === aiProvider) || AI_PROVIDERS[0];
+    const provider = providers.find(item => item.id === aiProvider) || providers[0] || {
+        id: aiProvider,
+        label: aiProvider,
+        requiresApiKey: true,
+        allowsBaseUrl: false,
+        defaultModel: '',
+        help: ''
+    };
 
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const response = await fetch('/api/config');
-                const config = await response.json();
+                const config = await TranslationService.getConfig();
 
                 setProjectId(config.googleTranslate?.projectId || '');
                 setKeyFilename(config.googleTranslate?.keyFilename || '');
@@ -89,6 +42,7 @@ const Settings = ({ onClose }) => {
                 setHasApiKey(Boolean(config.aiTranslate?.hasApiKey));
                 setHasSavedApiKey(Boolean(config.aiTranslate?.hasSavedApiKey));
                 setLocalesPath(config.path || '');
+                setProviders(Array.isArray(config.aiProviders) ? config.aiProviders : []);
             } catch (error) {
                 console.error('Failed to fetch config:', error);
             }
@@ -100,35 +54,24 @@ const Settings = ({ onClose }) => {
         setLoading(true);
         setMessage(null);
         try {
-            const response = await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    settings: { 
-                        googleTranslate: {
-                            projectId: projectId,
-                            keyFilename: keyFilename
-                        },
-                        aiTranslate: {
-                            provider: aiProvider,
-                            apiKey: aiApiKey,
-                            model: aiModel,
-                            baseUrl: aiBaseUrl,
-                            ...(clearApiKey ? { clearApiKey: true } : {})
-                        },
-                        path: localesPath 
-                    } 
-                })
+            await TranslationService.saveSettings({
+                googleTranslate: {
+                    projectId: projectId,
+                    keyFilename: keyFilename
+                },
+                aiTranslate: {
+                    provider: aiProvider,
+                    apiKey: aiApiKey,
+                    model: aiModel,
+                    baseUrl: aiBaseUrl,
+                    ...(clearApiKey ? { clearApiKey: true } : {})
+                },
+                path: localesPath
             });
-            if (response.ok) {
-                setMessage({ type: 'success', text: 'Settings saved successfully!' });
-                setTimeout(() => {
-                    window.location.reload(); 
-                }, 1000);
-            } else {
-                const data = await response.json();
-                throw new Error(data.error || 'Failed to save settings');
-            }
+            setMessage({ type: 'success', text: 'Settings saved successfully!' });
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             setMessage({ type: 'error', text: error.message });
         } finally {
@@ -190,7 +133,7 @@ const Settings = ({ onClose }) => {
                     className="settings-select"
                     disabled={loading}
                 >
-                    {AI_PROVIDERS.map(item => (
+                    {providers.map(item => (
                         <option key={item.id} value={item.id}>{item.label}</option>
                     ))}
                 </select>

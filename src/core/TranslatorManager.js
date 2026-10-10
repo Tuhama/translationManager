@@ -61,8 +61,24 @@ class TranslatorManager {
             unused: analysis.unused,
             maybeUsed: analysis.maybeUsed,
             missingFromFiles: missingFromFiles,
-            missingKeysContext: missingKeysContext
+            missingKeysContext: missingKeysContext,
+            layout: (await this.storage.usesNamespaceLayout()) ? 'namespace' : 'flat'
         };
+    }
+
+    /**
+     * Accepts "DE" or "pt-br" and returns "de" / "pt-BR".
+     */
+    static normalizeLanguageCode(input) {
+        const raw = String(input || '').trim();
+        const match = raw.match(/^([a-zA-Z]{2,3})(?:-([a-zA-Z0-9]{2,8}))?$/);
+        if (!match) return null;
+        const language = match[1].toLowerCase();
+        if (!match[2]) return language;
+        const region = match[2].length <= 3
+            ? match[2].toUpperCase()
+            : match[2][0].toUpperCase() + match[2].slice(1).toLowerCase();
+        return `${language}-${region}`;
     }
 
     /**
@@ -228,8 +244,8 @@ class TranslatorManager {
      * @returns {Promise<{language: string, translated: number, sourceLang: string}>}
      */
     async addLanguage(targetLang, sourceLang = 'en') {
-        const code = String(targetLang || '').trim();
-        if (!/^[a-z]{2,3}(-[a-zA-Z0-9]{2,8})?$/.test(code)) {
+        const code = TranslatorManager.normalizeLanguageCode(targetLang);
+        if (!code) {
             throw new Error('Enter a language code such as "de" or "pt-BR".');
         }
 
@@ -278,7 +294,7 @@ class TranslatorManager {
             });
         }
 
-        await this.storage.write(code, result);
+        await this.storage.write(code, result, { mirrorLang: sourceLang });
         return { language: code, translated: pairs.length, sourceLang };
     }
 
@@ -298,51 +314,6 @@ class TranslatorManager {
                 await this.storage.write(lang, translations[lang], options);
             }
         }
-    }
-
-    /**
-     * Exports missing translation keys in the format: {"key": {"lang1": "", "lang2": ""}}
-     * @param {string} sourceLang - The source language to exclude from missing keys
-     * @returns {Object} - Export data with missing keys and empty values for each target language
-     */
-    async exportMissingKeys(sourceLang = 'en') {
-        const { languages, translations, allKeys } = await this.scan();
-        const exportData = {};
-
-        // Get all missing keys across all languages
-        const allMissingKeys = new Set();
-
-        languages.forEach(lang => {
-            if (lang === sourceLang) return;
-
-            allKeys.forEach(key => {
-                const val = lodash.get(translations[lang], key);
-                if (val === undefined || val === '') {
-                    allMissingKeys.add(key);
-                }
-            });
-        });
-
-        // Build export structure: {"key": {"lang1": "", "lang2": ""}}
-        Array.from(allMissingKeys).forEach(key => {
-            exportData[key] = {};
-            languages.forEach(lang => {
-                if (lang !== sourceLang) {
-                    const val = lodash.get(translations[lang], key);
-                    exportData[key][lang] = (val === undefined || val === '') ? '' : val;
-                }
-            });
-        });
-
-        return {
-            exportData,
-            metadata: {
-                sourceLang,
-                targetLanguages: languages.filter(lang => lang !== sourceLang),
-                totalKeys: allMissingKeys.size,
-                exportedAt: new Date().toISOString()
-            }
-        };
     }
 
     /**
@@ -424,6 +395,10 @@ class TranslatorManager {
             format = true 
         } = options;
 
+        const payload = importData && typeof importData.exportData === 'object' && importData.exportData
+            ? importData.exportData
+            : importData;
+
         const translations = await this.storage.readAll();
         const languages = Object.keys(translations);
         const importStats = {
@@ -432,11 +407,11 @@ class TranslatorManager {
             errors: []
         };
 
-        for (const key in importData) {
+        for (const key in payload) {
             // Skip metadata if present
             if (key === 'metadata') continue;
 
-            const keyTranslations = importData[key];
+            const keyTranslations = payload[key];
 
             for (const lang in keyTranslations) {
                 const translation = keyTranslations[lang];
@@ -484,6 +459,7 @@ class TranslatorManager {
             delete clone.aiTranslate.apiKey;
             delete clone.aiTranslate.clearApiKey;
         }
+        clone.aiProviders = AITranslator.listProviders();
         return clone;
     }
 

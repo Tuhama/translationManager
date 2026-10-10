@@ -9,7 +9,7 @@ A modern, web-based interface for managing i18n translation files in React and o
 
 - **Modern UI**: Dark mode, glassmorphism, and smooth animations.
 - **AI-Powered Translation**: OpenAI, Google Gemini, Groq’s free tier, local Ollama and LM Studio, any OpenAI-compatible server, and Google Cloud Translate.
-- **Add Language**: Create a new locale file and translate every string from a source language in one step.
+- **Add Language**: Create a new locale (flat file or namespace folder) and translate every string from a source language in one step.
 - **Auto-Translate Wizard**: Scan missing values, generate translations, review them, then save in bulk.
 - **Context-Aware Scanning**: Extracts code snippets where translation keys are used, providing crucial context for AI translations.
 - **Missing Keys Detection**: Identifies translation keys used in source code but missing from files.
@@ -25,7 +25,7 @@ A modern, web-based interface for managing i18n translation files in React and o
 
 ## Installation
 
-Add it as a devDependency to your project:
+Install globally, or add it as a devDependency (`npm install -D @tuhama/translation-manager`):
 
 ```bash
 npm install -g @tuhama/translation-manager
@@ -47,6 +47,7 @@ Translation Manager now supports both flat JSON files (e.g., `en.json`) and dire
 
 - If a folder named `en` exists in your locales directory, the manager will read all `.json` files inside it as namespaces.
 - Nested folders are also supported (e.g., `en/auth/errors.json` -> `en.auth.errors`).
+- Adding a language copies that layout: a namespaced project gets `de/common.json`, not a mixed `de.json`.
 - When scanning source code, `useTranslation('auth')` will correctly map relative keys to the `auth` namespace.
 
 ### 🤖 AI-Friendly Localization
@@ -55,7 +56,7 @@ The manager now extracts the **surrounding code** for every translation key it f
 
 ### 📤📥 Export/Import (AI-Enhanced)
 
-You can export all missing translation keys to a single JSON file. This export is **AI-Ready**, containing code snippets for each key so you can feed it to an LLM for context-aware translations.
+You can export all missing translation keys to a single JSON file. The download includes `exportData`, `context` (file, line, snippet), and `metadata`. Import accepts that same file or a bare `{ "key": { "fr": "..." } }` object.
 
 ### 📊 CLI Status
 
@@ -69,13 +70,13 @@ Outputs a machine-readable JSON summary of missing keys, coverage percentage, an
 
 ### ⚠️ Missing Keys Detection
 
-The application automatically scans your source code for translation keys used (e.g., `t('key.name')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
+The application automatically scans your source code for translation keys used (e.g., `t('key.name')`) but missing from your translation files. Click the **Missing Keys** badge in the header to review and create them instantly.
 
 ### 🌐 Add Language
 
-Use **Tools → Add Language** to create a new locale (for example `de` or `pt-BR`) and fill it from an existing source language. Every non-empty string is translated with the configured provider; nested objects are preserved.
+Use **Tools → Add Language** to create a new locale (for example `de`, `DE`, or `pt-BR`) and fill it from an existing source language. Codes are normalized (`DE` → `de`, `pt-br` → `pt-BR`). Every non-empty string is translated with the configured provider; nested objects and namespace folders are preserved.
 
-This requires an AI provider or Google Cloud Translate in settings. Duplicate codes are rejected.
+This requires a usable AI provider or Google Cloud Translate in settings. An incomplete AI block falls through to Google Cloud when that is configured. Duplicate codes are rejected.
 
 ```http
 POST /api/languages

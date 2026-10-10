@@ -96,45 +96,93 @@ class Storage {
     }
 
     /**
+     * True when at least as many locales are directories as flat JSON files.
+     */
+    async usesNamespaceLayout() {
+        const localesDir = await this.getLocalesDir();
+        const entries = await fs.readdir(localesDir, { withFileTypes: true });
+        const dirs = entries.filter(entry => entry.isDirectory()).length;
+        const files = entries.filter(entry => entry.isFile() && entry.name.endsWith('.json')).length;
+        return dirs > 0 && dirs >= files;
+    }
+
+    /**
+     * Relative directory paths inside a locale folder, or null if that locale is a flat file.
+     */
+    async readLanguageStructure(lang) {
+        const localesDir = await this.getLocalesDir();
+        const langDir = path.join(localesDir, lang);
+        if (!(await fs.pathExists(langDir))) return null;
+        const stat = await fs.stat(langDir);
+        if (!stat.isDirectory()) return null;
+
+        const dirs = new Set();
+        const walk = async (dir, rel) => {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (!entry.isDirectory()) continue;
+                const childRel = rel ? `${rel}/${entry.name}` : entry.name;
+                dirs.add(childRel);
+                await walk(path.join(dir, entry.name), childRel);
+            }
+        };
+        await walk(langDir, '');
+        return dirs;
+    }
+
+    /**
      * Writes a single translation file (or all of them).
+     * New languages follow an existing locale when `mirrorLang` is set,
+     * otherwise they follow the project-wide namespace vs flat layout.
      */
     async write(lang, content, options = {}) {
         const localesDir = await this.getLocalesDir();
         const langDir = path.join(localesDir, lang);
+        const flatPath = path.join(localesDir, `${lang}.json`);
 
-        // Sort the content before writing if sorting is enabled (default: true)
         const shouldSort = options.sort !== false;
         const finalContent = shouldSort ? Utilities.sortObject(content) : content;
 
-        const writeRecursive = async (dir, data) => {
+        const langDirExists = await fs.pathExists(langDir) && (await fs.stat(langDir)).isDirectory();
+        const flatExists = await fs.pathExists(flatPath);
+
+        let namespaceDirs = options.namespaceDirs;
+        if (Array.isArray(namespaceDirs)) {
+            namespaceDirs = new Set(namespaceDirs);
+        }
+        if (!namespaceDirs && options.mirrorLang) {
+            namespaceDirs = await this.readLanguageStructure(options.mirrorLang);
+        }
+
+        let useNamespace = langDirExists;
+        if (!useNamespace && !flatExists) {
+            if (namespaceDirs) {
+                useNamespace = true;
+            } else {
+                useNamespace = await this.usesNamespaceLayout();
+            }
+        }
+
+        const writeRecursive = async (dir, data, rel = '') => {
             await fs.ensureDir(dir);
-            for (const key in data) {
+            for (const key of Object.keys(data)) {
                 const value = data[key];
-                const fullPath = path.join(dir, `${key}.json`);
-                
-                // If the value is an object and NOT an empty object, and we want to support nested dirs
-                // we need to decide if we write it as a file or a directory.
-                // In i18next, usually one file = one namespace. Nested keys inside the file are NOT separate files.
-                // HOWEVER, our readAll now supports nested directories.
-                // To be consistent, if we read a nested directory, we should probably write it back as one.
-                
-                // Let's check if the directory already exists or if it's a new nested structure.
+                const childRel = rel ? `${rel}/${key}` : key;
                 const potentialDir = path.join(dir, key);
-                if (typeof value === 'object' && value !== null && !Array.isArray(value) && await fs.pathExists(potentialDir) && (await fs.stat(potentialDir)).isDirectory()) {
-                    await writeRecursive(potentialDir, value);
+                const existsAsDir = await fs.pathExists(potentialDir) && (await fs.stat(potentialDir)).isDirectory();
+                const mirroredDir = namespaceDirs instanceof Set && namespaceDirs.has(childRel);
+                if (typeof value === 'object' && value !== null && !Array.isArray(value) && (existsAsDir || mirroredDir)) {
+                    await writeRecursive(potentialDir, value, childRel);
                 } else {
-                    await fs.writeJson(fullPath, value, { spaces: 2 });
+                    await fs.writeJson(path.join(dir, `${key}.json`), value, { spaces: 2 });
                 }
             }
         };
 
-        if (await fs.pathExists(langDir) && (await fs.stat(langDir)).isDirectory()) {
-            // Namespace mode
+        if (useNamespace) {
             await writeRecursive(langDir, finalContent);
         } else {
-            // Flat mode
-            const filePath = path.join(localesDir, `${lang}.json`);
-            await fs.writeJson(filePath, finalContent, { spaces: 2 });
+            await fs.writeJson(flatPath, finalContent, { spaces: 2 });
         }
     }
 
