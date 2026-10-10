@@ -17,15 +17,27 @@ Find keys that are used in the source code (e.g., `t('key.name')` or `t('namespa
 - **Action**: Use the `Scanner` or the Web UI to find "Missing from files" keys.
 - **AI Task**: If you find missing keys, suggest descriptive key names based on their usage.
 
-### 3. Generate Context-Aware Translations
+### 3. Add a New Language
+Do not copy locale JSON by hand. Create the language and translate every source string in one call:
+- **UI**: Tools → Add Language. Pick a common code or enter a custom one (`de`, `pt-BR`).
+- **API**: `POST /api/languages` with `{ "targetLang": "de", "sourceLang": "en" }`.
+- **Rules**: Codes must match `xx` or `xx-YY`. The source language must already exist. The target must not already exist. A translator must be configured (AI or Google Cloud). Empty source strings stay empty. Nested objects are preserved.
+- **Response**: `{ "language": "de", "translated": 42, "sourceLang": "en" }`.
+
+### 4. Generate Context-Aware Translations
 When translating, leverage the extracted code context:
 - **Rule**: Use the surrounding code snippets to determine the correct nuance (e.g., is "Save" a button or a noun?).
-- **Export**: The system allows exporting keys with context as JSON to facilitate bulk AI translation. Use this for mass updates.
+- **Single key**: Use the editor **Source-to-All** button or `POST /api/translate` with `{ text, targetLang, sourceLang, key }` so code context is attached.
+- **Missing values across languages**: Tools → Auto-Translate, or:
+  1. `GET /api/bulk-translate/scan?sourceLang=en` to count gaps.
+  2. `POST /api/bulk-translate/execute` with `{ "sourceLang": "en" }` to get a review preview.
+  3. `POST /api/bulk-save` with `{ "data": preview, "format": true }` after review.
+- **Export**: Export keys with context as JSON (`GET /api/export-missing` or `/api/export-missing/preview`) for mass updates outside the UI. Import with `POST /api/import-translations`.
 - **Style**: Maintain consistent tone across the app (default: professional and concise).
 - **Placeholders**: Always preserve `{name}`, `{{count}}`, or other interpolation markers.
 - **Providers**: Translation can use OpenAI, Gemini, Groq, Ollama, LM Studio, or any OpenAI-compatible server configured in `translation.config.json`. Ollama and LM Studio are local and do not need an API key. Never commit API keys. The server binds to `127.0.0.1` and does not return saved keys to the browser.
 
-### 4. Maintain Key Consistency & Namespaces
+### 5. Maintain Key Consistency & Namespaces
 - **Namespaces**: The library supports namespaces (e.g., `namespace:key`). Ensure you respect the configured storage mode, storing them either as flattened keys or separated into directory-based namespace files.
 - **Naming**: Use dot-notation for nesting (e.g., `auth.login.button_label`).
 - **Sorting**: Keys should be kept in alphabetical order. Use the Normalize action in the Web UI (`POST /api/normalize`). There is no `normalize` CLI command.
@@ -37,7 +49,12 @@ When translating, leverage the extracted code context:
 - **Naming Convention**: Prefer `snake_case` or `camelCase` based on existing patterns in the JSON files.
 - **Key Discovery**: If you see hardcoded strings in `.js`, `.jsx`, `.ts`, or `.tsx` files, recommend wrapping them in `t()` and adding them to the translations.
 
-## Commands Reference
-- `npx @tuhama/translation-manager`: Start the Web UI.
-- `npx @tuhama/translation-manager status`: Get JSON health report.
+## Commands and HTTP Reference
+- `npx @tuhama/translation-manager`: Start the Web UI (binds to `127.0.0.1` by default).
+- `npx @tuhama/translation-manager status`: JSON health report (languages, coverage, unused, missing-from-code).
+- `POST /api/languages`: Add a locale and translate every string from `sourceLang`.
+- `GET /api/bulk-translate/scan`: Report missing values per language.
+- `POST /api/bulk-translate/execute`: Generate translations for those gaps (does not write files).
+- `POST /api/bulk-save`: Persist a reviewed preview.
+- `POST /api/normalize`: Sync and alphabetically sort keys. There is no `normalize` CLI command.
 - `pnpm test`: Run the test suite to ensure core logic remains robust.

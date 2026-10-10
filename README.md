@@ -9,6 +9,8 @@ A modern, web-based interface for managing i18n translation files in React and o
 
 - **Modern UI**: Dark mode, glassmorphism, and smooth animations.
 - **AI-Powered Translation**: OpenAI, Google Gemini, Groq’s free tier, local Ollama and LM Studio, any OpenAI-compatible server, and Google Cloud Translate.
+- **Add Language**: Create a new locale file and translate every string from a source language in one step.
+- **Auto-Translate Wizard**: Scan missing values, generate translations, review them, then save in bulk.
 - **Context-Aware Scanning**: Extracts code snippets where translation keys are used, providing crucial context for AI translations.
 - **Missing Keys Detection**: Identifies translation keys used in source code but missing from files.
 - **Cleanup Tool**: Detects and batch-removes unused translation keys.
@@ -69,9 +71,37 @@ Outputs a machine-readable JSON summary of missing keys, coverage percentage, an
 
 The application automatically scans your source code for translation keys used (e.g., `t('key.name')`) but missing from your translation files. Click the "**Missing**" button in the sidebar to review and create them instantly.
 
+### 🌐 Add Language
+
+Use **Tools → Add Language** to create a new locale (for example `de` or `pt-BR`) and fill it from an existing source language. Every non-empty string is translated with the configured provider; nested objects are preserved.
+
+This requires an AI provider or Google Cloud Translate in settings. Duplicate codes are rejected.
+
+```http
+POST /api/languages
+Content-Type: application/json
+
+{ "targetLang": "de", "sourceLang": "en" }
+```
+
+The response includes `{ "language": "de", "translated": 42, "sourceLang": "en" }`.
+
 ### 🪄 Auto-Translation
 
-Configure Google Cloud, OpenAI, or Gemini in the settings to enable auto-translation. Use the "**Source-to-All**" button in the editor to quickly populate all languages.
+Configure an AI provider or Google Cloud Translate in settings. Then:
+
+- **Tools → Auto-Translate**: scan missing keys from a source language, generate translations, review the preview, and approve the save.
+- **Source-to-All** in the editor: fill every other language for the key you are editing.
+
+Bulk translate APIs:
+
+```http
+GET  /api/bulk-translate/scan?sourceLang=en
+POST /api/bulk-translate/execute
+{ "sourceLang": "en" }
+POST /api/bulk-save
+{ "data": { "de": { "hello": "Hallo" } }, "format": true }
+```
 
 ## Configuration
 
