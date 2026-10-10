@@ -97,17 +97,18 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
     };
 
     const totalMissing = report ? Object.values(report).reduce((acc, curr) => acc + curr.count, 0) : 0;
+    const busy = loading || scanning;
 
     const footer = (
         <>
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose} disabled={busy}>
                 Cancel
             </Button>
             {!preview ? (
                 <Button 
                     variant="primary" 
                     onClick={handleTranslate} 
-                    disabled={loading || scanning || totalMissing === 0}
+                    disabled={busy || totalMissing === 0}
                     loading={loading}
                     loadingText="Translating..."
                 >
@@ -130,10 +131,11 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
     return (
         <Modal
             isOpen={true}
-            onClose={onClose}
+            onClose={busy ? () => {} : onClose}
             title="Auto-Translate Wizard 🪄"
             className="bulk-translate-modal"
             footer={footer}
+            closeOnOverlayClick={!busy}
         >
             {error && (
                 <Alert type="error">
@@ -149,6 +151,7 @@ const AutoTranslateTool = ({ languages, onUpdate, onClose, actions }) => {
                             value={sourceLang} 
                             onChange={(e) => setSourceLang(e.target.value)}
                             className="source-select"
+                            disabled={busy}
                         >
                             {languages.map(lang => (
                                 <option key={lang} value={lang}>{lang.toUpperCase()}</option>

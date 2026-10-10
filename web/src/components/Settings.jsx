@@ -138,7 +138,7 @@ const Settings = ({ onClose }) => {
 
     const footer = (
         <>
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
                 Cancel
             </Button>
             <Button 
@@ -157,10 +157,11 @@ const Settings = ({ onClose }) => {
     return (
         <Modal
             isOpen={true}
-            onClose={onClose}
+            onClose={loading ? () => {} : onClose}
             title="Configuration Settings"
             className="settings-modal"
             footer={footer}
+            closeOnOverlayClick={!loading}
         >
             <FormGroup
                 label="Locales Directory Path"
@@ -172,6 +173,7 @@ const Settings = ({ onClose }) => {
                     onChange={(e) => setLocalesPath(e.target.value)} 
                     placeholder="e.g. src/locales or public/locales"
                     className="settings-input settings-input-plain"
+                    disabled={loading}
                 />
             </FormGroup>
 
@@ -186,6 +188,7 @@ const Settings = ({ onClose }) => {
                         setAiBaseUrl('');
                     }}
                     className="settings-select"
+                    disabled={loading}
                 >
                     {AI_PROVIDERS.map(item => (
                         <option key={item.id} value={item.id}>{item.label}</option>
@@ -210,6 +213,7 @@ const Settings = ({ onClose }) => {
                         placeholder={hasApiKey ? 'Saved key stays if this is blank' : 'sk-...'}
                         className="settings-input"
                         autoComplete="off"
+                        disabled={loading}
                     />
                 </FormGroup>
             )}
@@ -219,6 +223,7 @@ const Settings = ({ onClose }) => {
                     variant="secondary"
                     size="small"
                     className="settings-key-action"
+                    disabled={loading}
                     onClick={() => {
                         setClearApiKey(true);
                         setAiApiKey('');
@@ -243,6 +248,7 @@ const Settings = ({ onClose }) => {
                         onChange={(e) => setAiBaseUrl(e.target.value)}
                         placeholder={provider.defaultBaseUrl || 'http://127.0.0.1:8080/v1'}
                         className="settings-input settings-input-plain"
+                        disabled={loading}
                     />
                 </FormGroup>
             )}
@@ -259,6 +265,7 @@ const Settings = ({ onClose }) => {
                     onChange={(e) => setAiModel(e.target.value)} 
                     placeholder={provider.defaultModel || 'model id'}
                     className="settings-input settings-input-plain"
+                    disabled={loading}
                 />
             </FormGroup>
 
@@ -273,6 +280,7 @@ const Settings = ({ onClose }) => {
                     onChange={(e) => setProjectId(e.target.value)} 
                     placeholder="your-google-cloud-project-id"
                     className="settings-input settings-input-plain"
+                    disabled={loading}
                 />
             </FormGroup>
 
@@ -286,6 +294,7 @@ const Settings = ({ onClose }) => {
                     onChange={(e) => setKeyFilename(e.target.value)} 
                     placeholder="path/to/service-account-key.json"
                     className="settings-input settings-input-plain"
+                    disabled={loading}
                 />
             </FormGroup>
 

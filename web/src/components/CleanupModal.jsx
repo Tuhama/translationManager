@@ -10,25 +10,27 @@ const CleanupModal = ({
   data,
   selectedUnused,
   onToggleUnused,
-  onConfirm
+  onConfirm,
+  deleting = false
 }) => {
   const allUnused = [...(data.unused || []), ...(data.maybeUsed || [])].sort();
 
   return (
     <Modal
       isOpen={show}
-      onClose={onClose}
+      onClose={deleting ? () => {} : onClose}
       title="Clean Unused Keys"
+      closeOnOverlayClick={!deleting}
       footer={
         <>
-          <button className="secondary-btn" onClick={onClose}>Cancel</button>
+          <button className="secondary-btn" onClick={onClose} disabled={deleting}>Cancel</button>
           <button 
             className="primary-btn" 
-            style={{ background: selectedUnused.length > 0 ? 'var(--red)' : 'var(--text-muted)' }}
-            disabled={selectedUnused.length === 0}
+            style={{ background: selectedUnused.length > 0 && !deleting ? 'var(--red)' : 'var(--text-muted)' }}
+            disabled={deleting || selectedUnused.length === 0}
             onClick={onConfirm}
           >
-            Delete Selected ({selectedUnused.length})
+            {deleting ? 'Deleting...' : `Delete Selected (${selectedUnused.length})`}
           </button>
         </>
       }
@@ -42,12 +44,13 @@ const CleanupModal = ({
             <div 
               key={key} 
               className={`cleanup-item ${selectedUnused.includes(key) ? 'active' : ''}`}
-              onClick={() => onToggleUnused(key)}
+              onClick={() => { if (!deleting) onToggleUnused(key); }}
             >
               <input 
                 type="checkbox" 
                 checked={selectedUnused.includes(key)} 
-                readOnly 
+                readOnly
+                disabled={deleting}
               />
               <label>{key}</label>
               {data.maybeUsed?.includes(key) && (

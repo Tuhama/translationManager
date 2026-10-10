@@ -8,6 +8,7 @@ import CleanupModal from './CleanupModal';
 const CleanupTool = ({ data, onDeleteMultiple, isDropdownItem = false }) => {
   const [showCleanup, setShowCleanup] = useState(false);
   const [selectedUnused, setSelectedUnused] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   const handleOpen = () => {
     setSelectedUnused(data.unused || []);
@@ -15,12 +16,15 @@ const CleanupTool = ({ data, onDeleteMultiple, isDropdownItem = false }) => {
   };
 
   const handleConfirm = async () => {
-    if (selectedUnused.length === 0) return;
+    if (selectedUnused.length === 0 || deleting) return;
+    setDeleting(true);
     try {
       await onDeleteMultiple(selectedUnused);
       setShowCleanup(false);
     } catch (err) {
       console.error('Cleanup failed', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -45,6 +49,7 @@ const CleanupTool = ({ data, onDeleteMultiple, isDropdownItem = false }) => {
           selectedUnused={selectedUnused}
           onToggleUnused={toggleSelection}
           onConfirm={handleConfirm}
+          deleting={deleting}
         />
       </>
     );
@@ -66,6 +71,7 @@ const CleanupTool = ({ data, onDeleteMultiple, isDropdownItem = false }) => {
         selectedUnused={selectedUnused}
         onToggleUnused={toggleSelection}
         onConfirm={handleConfirm}
+        deleting={deleting}
       />
     </>
   );

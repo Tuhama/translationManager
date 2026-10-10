@@ -19,7 +19,9 @@ const Editor = ({
   const [isEditing, setIsEditing] = useState(false);
   const [translatingLang, setTranslatingLang] = useState(null);
   const [translatingAll, setTranslatingAll] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const busy = Boolean(translatingLang) || translatingAll || saving;
 
   useEffect(() => {
     if (error) {
@@ -124,8 +126,14 @@ const Editor = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (busy) return;
     const finalKey = selectedKey || e.target.newKey.value;
-    await onSave(finalKey, formData);
+    setSaving(true);
+    try {
+      await onSave(finalKey, formData);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (selectedKey === null) {
@@ -168,6 +176,7 @@ const Editor = ({
             variant="magic" 
             onClick={handleTranslateAll}
             loading={translatingAll}
+            disabled={busy}
             loadingText="⏳ Translating..."
             icon="🪄"
           >
@@ -196,6 +205,7 @@ const Editor = ({
                 placeholder="e.g. common.buttons.save" 
                 required 
                 onBlur={handleBlurKey}
+                disabled={busy}
               />
             </FormGroup>
           )}
@@ -206,7 +216,7 @@ const Editor = ({
                 <Button 
                   variant="icon" 
                   onClick={() => handleTranslate(lang)}
-                  disabled={translatingLang === lang || translatingAll}
+                  disabled={busy}
                   title="Auto-translate this field"
                   className="magic-wand"
                   icon={translatingLang === lang ? '⏳' : '🪄'}
@@ -225,6 +235,7 @@ const Editor = ({
                     placeholder={`Translation in ${lang}...`}
                     actionButton={magicButton}
                     rows={4}
+                    disabled={busy}
                   />
                 </FormGroup>
               );
@@ -234,8 +245,8 @@ const Editor = ({
 
         <div className="form-actions-sticky">
           <div className="form-actions-content">
-            <Button type="submit" variant="primary">Save Changes</Button>
-            <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={busy} loading={saving} loadingText="Saving...">Save Changes</Button>
+            <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>Cancel</Button>
           </div>
         </div>
       </form>

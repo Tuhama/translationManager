@@ -86,7 +86,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
 
     const footer = (
         <>
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
                 Close
             </Button>
             {activeTab === 'export' ? (
@@ -116,10 +116,11 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
     return (
         <Modal
             isOpen={true}
-            onClose={onClose}
+            onClose={loading ? () => {} : onClose}
             title="Export/Import Translations 📤📥"
             className="export-import-modal"
             footer={footer}
+            closeOnOverlayClick={!loading}
         >
             {error && (
                 <Alert type="error">
@@ -132,12 +133,14 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                     <button 
                         className={`tab-button ${activeTab === 'export' ? 'active' : ''}`}
                         onClick={() => setActiveTab('export')}
+                        disabled={loading}
                     >
                         Export Missing Keys
                     </button>
                     <button 
                         className={`tab-button ${activeTab === 'import' ? 'active' : ''}`}
                         onClick={() => setActiveTab('import')}
+                        disabled={loading}
                     >
                         Import Translations
                     </button>
@@ -190,6 +193,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                                 type="file" 
                                 accept=".json"
                                 onChange={handleFileSelect}
+                                disabled={loading}
                             />
                         </FormGroup>
 
@@ -199,6 +203,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                                 <input 
                                     type="checkbox" 
                                     checked={importOptions.overwriteExisting}
+                                    disabled={loading}
                                     onChange={(e) => setImportOptions({
                                         ...importOptions, 
                                         overwriteExisting: e.target.checked
@@ -210,6 +215,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                                 <input 
                                     type="checkbox" 
                                     checked={importOptions.skipEmpty}
+                                    disabled={loading}
                                     onChange={(e) => setImportOptions({
                                         ...importOptions, 
                                         skipEmpty: e.target.checked
@@ -221,6 +227,7 @@ const ExportImportTool = ({ languages, onUpdate, onClose }) => {
                                 <input 
                                     type="checkbox" 
                                     checked={importOptions.format}
+                                    disabled={loading}
                                     onChange={(e) => setImportOptions({
                                         ...importOptions, 
                                         format: e.target.checked
