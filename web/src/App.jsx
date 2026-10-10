@@ -6,6 +6,7 @@ import Editor from './components/Editor'
 import Settings from './components/Settings'
 import AutoTranslateTool from './components/AutoTranslateTool'
 import ExportImportTool from './components/ExportImportTool'
+import AddLanguageTool from './components/AddLanguageTool'
 import Alert from './components/ui/Alert'
 import { useTranslations } from './hooks/useTranslations'
 
@@ -20,6 +21,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showAutoTranslate, setShowAutoTranslate] = useState(false)
   const [showExportImport, setShowExportImport] = useState(false)
+  const [showAddLanguage, setShowAddLanguage] = useState(false)
   const [error, setError] = useState(null)
 
   const activeError = error || fetchError
@@ -96,6 +98,7 @@ function App() {
         onShowSettings={() => setShowSettings(true)}
         onShowAutoTranslate={() => setShowAutoTranslate(true)}
         onShowExportImport={() => setShowExportImport(true)}
+        onShowAddLanguage={() => setShowAddLanguage(true)}
         onSelectKey={handleSelectKey}
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         data={data}
@@ -137,6 +140,13 @@ function App() {
           onUpdate={actions.refresh} 
           onClose={() => setShowAutoTranslate(false)}
           actions={actions}
+        />
+      )}
+      {showAddLanguage && (
+        <AddLanguageTool
+          languages={data.languages}
+          onUpdate={actions.refresh}
+          onClose={() => setShowAddLanguage(false)}
         />
       )}
       {showExportImport && (

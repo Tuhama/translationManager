@@ -1087,6 +1087,12 @@ body {
   color: var(--text-color);
 }
 
+.wizard-step .hint {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .source-select {
   width: 100%;
   padding: 12px;

@@ -111,6 +111,20 @@ function startServer(targetDir, port = 3000, config = {}, host = '127.0.0.1') {
         }
     });
 
+    app.post('/api/languages', async (req, res, next) => {
+        try {
+            if (!checkConfig(res)) return;
+            const { targetLang, sourceLang } = req.body || {};
+            const result = await manager.addLanguage(targetLang, sourceLang || 'en');
+            res.json({ success: true, ...result });
+        } catch (err) {
+            if (err.message && /already exists|language code|was not found/i.test(err.message)) {
+                return res.status(400).json({ error: err.message });
+            }
+            next(err);
+        }
+    });
+
     app.post('/api/bulk-save', async (req, res, next) => {
         try {
             const { data, format = true } = req.body;

@@ -222,6 +222,67 @@ class TranslatorManager {
     }
 
     /**
+     * Creates a new language file and auto-translates every string from the source language.
+     * @param {string} targetLang
+     * @param {string} sourceLang
+     * @returns {Promise<{language: string, translated: number, sourceLang: string}>}
+     */
+    async addLanguage(targetLang, sourceLang = 'en') {
+        const code = String(targetLang || '').trim();
+        if (!/^[a-z]{2,3}(-[a-zA-Z0-9]{2,8})?$/.test(code)) {
+            throw new Error('Enter a language code such as "de" or "pt-BR".');
+        }
+
+        const translations = await this.storage.readAll();
+        const languages = Object.keys(translations);
+        if (languages.some(lang => lang.toLowerCase() === code.toLowerCase())) {
+            throw new Error(`Language "${code}" already exists.`);
+        }
+        if (!translations[sourceLang]) {
+            throw new Error(`Source language "${sourceLang}" was not found.`);
+        }
+
+        const source = translations[sourceLang];
+        const pairs = [];
+        const collect = (obj, prefix) => {
+            if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+            for (const key of Object.keys(obj)) {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                const value = obj[key];
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    collect(value, fullKey);
+                } else if (typeof value === 'string' && value.trim()) {
+                    pairs.push({ key: fullKey, text: value });
+                }
+            }
+        };
+        collect(source, '');
+
+        const result = lodash.cloneDeep(source);
+        if (pairs.length > 0) {
+            const { translator, type } = await this.getTranslator();
+            let context = {};
+            if (type === 'ai') {
+                const scanner = new Scanner(this.targetDir, await this.storage.getLocalesDir(), this.config);
+                context = await scanner.findContextForKeys(pairs.map(pair => pair.key));
+            }
+            const translated = await translator.translate(
+                pairs.map(pair => pair.text),
+                code,
+                sourceLang,
+                context,
+                pairs.map(pair => pair.key)
+            );
+            pairs.forEach((pair, index) => {
+                lodash.set(result, pair.key, translated[index]);
+            });
+        }
+
+        await this.storage.write(code, result);
+        return { language: code, translated: pairs.length, sourceLang };
+    }
+
+    /**
      * Saves multiple translation keys across languages.
      * @param {Object} data - { lang: { key: value } }
      */

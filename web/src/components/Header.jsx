@@ -12,6 +12,7 @@ const Header = ({
   onShowSettings,
   onShowAutoTranslate,
   onShowExportImport,
+  onShowAddLanguage,
   onSelectKey,
   toggleSidebar,
   data,
@@ -93,6 +94,11 @@ const Header = ({
                 onDeleteMultiple={onDeleteMultiple}
                 isDropdownItem
               />
+
+              <button className="dropdown-item" onClick={onShowAddLanguage}>
+                <span className="item-icon">🌐</span>
+                Add Language
+              </button>
 
               <button className="dropdown-item" onClick={onShowAutoTranslate}>
                 <span className="item-icon">🤖</span>

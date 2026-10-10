@@ -65,6 +65,22 @@ class TranslationService {
   /**
    * Saves bulk translations.
    */
+  /**
+   * Creates a locale file and translates every string from the source language.
+   */
+  static async addLanguage(targetLang, sourceLang) {
+    const res = await fetch('/api/languages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetLang, sourceLang })
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to add language');
+    }
+    return await res.json();
+  }
+
   static async saveBulkTranslations(data, format = true) {
     const res = await fetch('/api/bulk-save', {
       method: 'POST',

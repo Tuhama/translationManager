@@ -50,6 +50,33 @@ describe('TranslatorManager', () => {
         expect(es.new.key).toBe('Nuevo');
     });
 
+    it('should add a language and translate every source string', async () => {
+        await fs.writeJson(path.join(localesDir, 'en.json'), {
+            hello: 'Hello',
+            nested: { save: 'Save' },
+            empty: ''
+        });
+
+        const manager = new TranslatorManager(testDir);
+        manager.getTranslator = async () => ({
+            type: 'google',
+            translator: {
+                translate: async (texts, targetLang) => texts.map(text => `${text}-${targetLang}`)
+            }
+        });
+
+        const result = await manager.addLanguage('de', 'en');
+        expect(result).toEqual({ language: 'de', translated: 2, sourceLang: 'en' });
+
+        const de = await fs.readJson(path.join(localesDir, 'de.json'));
+        expect(de.hello).toBe('Hello-de');
+        expect(de.nested.save).toBe('Save-de');
+        expect(de.empty).toBe('');
+
+        await expect(manager.addLanguage('de', 'en')).rejects.toThrow(/already exists/);
+        await expect(manager.addLanguage('not a lang', 'en')).rejects.toThrow(/language code/i);
+    });
+
     it('should export missing translations with context', async () => {
         await fs.writeJson(path.join(localesDir, 'en.json'), { hello: 'Hello' });
         await fs.writeFile(path.join(testDir, 'App.js'), `
