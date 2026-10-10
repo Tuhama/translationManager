@@ -5,9 +5,9 @@
     "keyFilename": ""
   },
   "aiTranslate": {
-    "provider": "lmstudio",
+    "provider": "",
     "apiKey": "",
-    "model": "google/gemma-4-e4b",
+    "model": "",
     "baseUrl": ""
   }
 }
